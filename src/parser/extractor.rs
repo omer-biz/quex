@@ -43,6 +43,6 @@ d=5, recurring monthly
 This should be ignored as well.
 "#;
         let quex_input = super::extract_quex(markdown_input);
-        assert_eq!(quex_input, vec!["2024 mar 1, sample description.\nd=5, recurring monthly\n1992* feb 29, recurring yearly\n"]);
+        assert_eq!(quex_input, vec!["2024 mar 1, sample description.\nd=5, recurring monthly\n1992* feb 29, named recurring yearly\n* jan 1, recurring yearly\n"]);
     }
 }

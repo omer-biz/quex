@@ -13,7 +13,7 @@ trait DisplayDate {
 }
 
 #[enum_dispatch::enum_dispatch(DisplayDate)]
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Calender {
     Date,
     Zemen,
@@ -31,7 +31,7 @@ impl DisplayDate for Zemen {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Schedule {
     pub description: String,
     pub date: Calender,
@@ -69,22 +69,23 @@ fn parse_quex(raw_quexs: RawQuex) -> Vec<Schedule> {
                 Rule::gregorian_date => {
                     let mut gregorian_date = date.into_inner();
                     let year = gregorian_date.next().unwrap();
-                    let mut year_str = year.as_str().to_string();
+                    let mut year_str = year.as_str();
 
                     if year.as_rule() == Rule::named_yearly {
                         let today: time::Date = time::OffsetDateTime::now_utc().date();
 
-                        year_str = year.as_str().replace("*", "");
+                        year_str = year.as_str().strip_suffix('*').unwrap();
                         let years_past = today.year() - year_str.parse::<i32>().unwrap();
 
                         description = description
-                            .replace("\\y", &year_str)
+                            .replace("\\y", year_str)
                             .replace("\\a", &years_past.to_string());
                     }
 
                     let month = gregorian_date.next().unwrap();
                     let day = gregorian_date.next().unwrap();
 
+                    // this could still fail because we are not validating the range of the inputs
                     let schedule_date = time::Date::from_calendar_date(
                         year_str.parse().unwrap(),
                         month_from_quex(month.as_str()),
@@ -99,8 +100,7 @@ fn parse_quex(raw_quexs: RawQuex) -> Vec<Schedule> {
                     let date = date
                         .as_str()
                         .strip_prefix("d=")
-                        .map(|n| n.parse::<u8>().ok())
-                        .flatten()
+                        .and_then(|n| n.parse::<u8>().ok())
                         .unwrap();
 
                     let mut month = today.month();
@@ -109,6 +109,7 @@ fn parse_quex(raw_quexs: RawQuex) -> Vec<Schedule> {
                         month = today.month().next();
                     }
 
+                    // this could still fail because we are not validating the range of the day
                     let schedule_date =
                         time::Date::from_calendar_date(today.year(), month, date).unwrap();
 
@@ -117,21 +118,22 @@ fn parse_quex(raw_quexs: RawQuex) -> Vec<Schedule> {
                 Rule::ethiopian_date => {
                     let mut ethiopian_date = date.into_inner();
                     let year = ethiopian_date.next().unwrap();
-                    let mut year_str = year.as_str().to_string();
+                    let mut year_str = year.as_str();
 
                     if year.as_rule() == Rule::named_yearly {
                         let today = Zemen::today();
-                        year_str = year.as_str().replace("*", "");
+                        year_str = year.as_str().strip_suffix('*').unwrap();
                         let years_past = today.year() - year_str.parse::<i32>().unwrap();
 
                         description = description
-                            .replace("\\y", &year_str)
+                            .replace("\\y", year_str)
                             .replace("\\a", &years_past.to_string());
                     }
 
                     let month = ethiopian_date.next().unwrap();
                     let day = ethiopian_date.next().unwrap();
 
+                    // this could still fail because we are not validating the range of the inputs
                     let schedule_date = Zemen::from_eth_cal(
                         year_str.parse().unwrap(),
                         werh_from_quex(month.as_str()),
@@ -196,11 +198,38 @@ mod tests {
 
     #[test]
     fn test_parse_quex() {
+        use super::Calender;
+        use super::Schedule;
+        use time::Date;
+        use zemen::Zemen;
+
         time::Date::from_calendar_date(2024, time::Month::March, 1).unwrap();
 
         let input = vec!["2016 neh 1, in ethiopia\n2024 mar 1, sample description.\nd=5, recurring monthly\n1992* feb 29, reacurring yeal: year: \\y and past_time: \\a\n"];
+        let output = vec![
+            super::Schedule {
+                description: "in ethiopia".to_string(),
+                date: Calender::from(Zemen::from_eth_cal(2016, zemen::Werh::Nehase, 1).unwrap()),
+            },
+            Schedule {
+                description: "sample description.".to_string(),
+                date: Calender::from(
+                    Date::from_calendar_date(2024, time::Month::March, 1).unwrap(),
+                ),
+            },
+            Schedule {
+                description: "recurring monthly".to_string(),
+                date: Calender::from(Date::from_calendar_date(2024, time::Month::July, 5).unwrap()),
+            },
+            Schedule {
+                description: "reacurring yeal: year: 1992 and past_time: 32".to_string(),
+                date: Calender::from(
+                    Date::from_calendar_date(1992, time::Month::February, 29).unwrap(),
+                ),
+            },
+        ];
+
         let schedules = super::parse_quex(input);
-        println!("{:#?}", schedules);
-        assert_eq!(schedules.len(), 1);
+        assert_eq!(schedules, output);
     }
 }
