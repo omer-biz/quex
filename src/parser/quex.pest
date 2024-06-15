@@ -1,0 +1,62 @@
+WHITESPACE = _{ " " }
+
+description = @{ (!"\n" ~ ANY)+ }
+
+gregorian_month = {
+    "jan"
+  | "feb"
+  | "mar"
+  | "apr"
+  | "may"
+  | "jun"
+  | "jul"
+  | "aug"
+  | "sep"
+  | "oct"
+  | "nov"
+  | "dec"
+}
+ethiopian_month = {
+    "mes"
+  | "መስከ"
+  | "tik"
+  | "ጥቅም"
+  | "hed"
+  | "ህዳር"
+  | "tah"
+  | "ታኅሣ"
+  | "tir"
+  | "ጥር"
+  | "yek"
+  | "የካቲ"
+  | "meg"
+  | "መጋቢ"
+  | "miy"
+  | "ሚያዝ"
+  | "gin"
+  | "ግንቦ"
+  | "sen"
+  | "ሴኒ"
+  | "ham"
+  | "ሐምሌ"
+  | "neh"
+  | "ነሐሴ"
+  | "pua"
+  | "ጳጉሜ"
+}
+
+day            = { ASCII_DIGIT{1, 2} }
+year           = { ASCII_DIGIT{1, 4} }
+named_yearly = { ASCII_DIGIT{1, 4} ~ "*" }
+yearly         = { "*" }
+
+gregorian_date = { (yearly | named_yearly | year) ~ gregorian_month ~ day }
+ethiopian_date = { (yearly | named_yearly | year) ~ ethiopian_month ~ day }
+
+recurring_monthly = { "d=" ~ ASCII_DIGIT{1, 2} }
+
+schedule = {
+    (recurring_monthly | gregorian_date | ethiopian_date) ~ "," ~ description ~ "\n"?
+}
+
+schedule_list = { SOI ~ schedule* ~ EOI}
