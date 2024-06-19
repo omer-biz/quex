@@ -203,6 +203,7 @@ dependencies = [
  "pest",
  "pest_derive",
  "pulldown-cmark",
+ "thiserror",
  "time",
  "zemen",
 ]
