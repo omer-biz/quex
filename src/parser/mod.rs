@@ -1,4 +1,5 @@
 mod extractor;
+mod walker;
 
 use pest::Parser;
 use pest_derive::Parser;
@@ -50,108 +51,107 @@ impl Schedule {
 #[grammar = "parser/quex.pest"]
 pub struct QuexParser;
 
-fn parse_quex(raw_quexs: RawQuex) -> Result<Vec<Schedule>> {
+fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
     let mut schedules = vec![];
 
-    for raw_quex in raw_quexs {
-        let Some(schedule_list) = QuexParser::parse(Rule::schedule_list, raw_quex)?.next() else {
+    // for raw_quex in raw_quexs {
+    let Some(schedule_list) = QuexParser::parse(Rule::schedule_list, raw_quex)?.next() else {
+        return Ok(schedules);
+    };
+
+    for schedule in schedule_list.into_inner() {
+        let mut schedule = schedule.into_inner();
+        let Some(date) = schedule.next() else {
             continue;
         };
+        let mut description = schedule.next().unwrap().as_str().to_string(); // won't fail
 
-        for schedule in schedule_list.into_inner() {
-            let mut schedule = schedule.into_inner();
-            let Some(date) = schedule.next() else {
-                continue;
-            };
-            let mut description = schedule.next().unwrap().as_str().to_string(); // won't fail
+        match date.as_rule() {
+            Rule::gregorian_date => {
+                let mut gregorian_date = date.into_inner();
+                let r = gregorian_date.as_str();
 
-            match date.as_rule() {
-                Rule::gregorian_date => {
-                    let mut gregorian_date = date.into_inner();
-                    let r = gregorian_date.as_str();
+                let year = gregorian_date.next().unwrap(); // won't fail
+                let mut year_str = year.as_str();
 
-                    let year = gregorian_date.next().unwrap(); // won't fail
-                    let mut year_str = year.as_str();
-
-                    if year.as_rule() == Rule::named_yearly {
-                        let today: time::Date = time::OffsetDateTime::now_utc().date();
-
-                        year_str = year.as_str().strip_suffix('*').unwrap(); // won't fail
-                        let years_past = today.year() - year_str.parse::<i32>().unwrap(); // won't
-                                                                                          // fail
-
-                        description = description
-                            .replace("\\y", year_str)
-                            .replace("\\a", &years_past.to_string());
-                    }
-
-                    let month = gregorian_date.next().unwrap();
-                    let day = gregorian_date.next().unwrap();
-
-                    let schedule_date = time::Date::from_calendar_date(
-                        year_str.parse().unwrap(),
-                        month_from_quex(month.as_str()),
-                        day.as_str().parse().unwrap(),
-                    )
-                    .map_err(|e| QuexError::GregorianDate(e, r))?;
-
-                    schedules.push(Schedule::new(description, Calender::from(schedule_date)));
-                }
-                Rule::recurring_monthly => {
+                if year.as_rule() == Rule::named_yearly {
                     let today: time::Date = time::OffsetDateTime::now_utc().date();
-                    let raw_date = date;
-                    let date = raw_date
-                        .as_str()
-                        .strip_prefix("d=")
-                        .and_then(|n| n.parse::<u8>().ok())
-                        .unwrap();
 
-                    let mut month = today.month();
+                    year_str = year.as_str().strip_suffix('*').unwrap(); // won't fail
+                    let years_past = today.year() - year_str.parse::<i32>().unwrap(); // won't
+                                                                                      // fail
 
-                    if date < today.day() {
-                        month = today.month().next();
-                    }
-
-                    let schedule_date =
-                        time::Date::from_calendar_date(today.year(), month, date)
-                            .map_err(|e| QuexError::RecurringMonthly(e, raw_date.as_str()))?;
-
-                    schedules.push(Schedule::new(description, Calender::from(schedule_date)));
+                    description = description
+                        .replace("\\y", year_str)
+                        .replace("\\a", &years_past.to_string());
                 }
-                Rule::ethiopian_date => {
-                    let mut ethiopian_date = date.into_inner();
-                    let r = ethiopian_date.as_str();
 
-                    let year = ethiopian_date.next().unwrap(); // won't fail
-                    let mut year_str = year.as_str();
+                let month = gregorian_date.next().unwrap();
+                let day = gregorian_date.next().unwrap();
 
-                    if year.as_rule() == Rule::named_yearly {
-                        let today = Zemen::today();
-                        year_str = year.as_str().strip_suffix('*').unwrap(); // won't fail
-                        let years_past = today.year() - year_str.parse::<i32>().unwrap(); // won't fail
+                let schedule_date = time::Date::from_calendar_date(
+                    year_str.parse().unwrap(),
+                    month_from_quex(month.as_str()),
+                    day.as_str().parse().unwrap(),
+                )
+                .map_err(|e| QuexError::GregorianDate(e, r))?;
 
-                        description = description
-                            .replace("\\y", year_str)
-                            .replace("\\a", &years_past.to_string());
-                    }
-
-                    let month = ethiopian_date.next().unwrap(); // won't fail
-                    let day = ethiopian_date.next().unwrap(); // won't fail
-
-                    // this could still fail because we are not validating the range of the inputs
-                    let schedule_date = Zemen::from_eth_cal(
-                        year_str.parse().unwrap(),
-                        werh_from_quex(month.as_str()),
-                        day.as_str().parse().unwrap(),
-                    )
-                    .map_err(|e| QuexError::EthiopianDate(e, r))?;
-
-                    schedules.push(Schedule::new(description, Calender::from(schedule_date)));
-                }
-                _ => unreachable!(),
+                schedules.push(Schedule::new(description, Calender::from(schedule_date)));
             }
+            Rule::recurring_monthly => {
+                let today: time::Date = time::OffsetDateTime::now_utc().date();
+                let raw_date = date;
+                let date = raw_date
+                    .as_str()
+                    .strip_prefix("d=")
+                    .and_then(|n| n.parse::<u8>().ok())
+                    .unwrap();
+
+                let mut month = today.month();
+
+                if date < today.day() {
+                    month = today.month().next();
+                }
+
+                let schedule_date = time::Date::from_calendar_date(today.year(), month, date)
+                    .map_err(|e| QuexError::RecurringMonthly(e, raw_date.as_str()))?;
+
+                schedules.push(Schedule::new(description, Calender::from(schedule_date)));
+            }
+            Rule::ethiopian_date => {
+                let mut ethiopian_date = date.into_inner();
+                let r = ethiopian_date.as_str();
+
+                let year = ethiopian_date.next().unwrap(); // won't fail
+                let mut year_str = year.as_str();
+
+                if year.as_rule() == Rule::named_yearly {
+                    let today = Zemen::today();
+                    year_str = year.as_str().strip_suffix('*').unwrap(); // won't fail
+                    let years_past = today.year() - year_str.parse::<i32>().unwrap(); // won't fail
+
+                    description = description
+                        .replace("\\y", year_str)
+                        .replace("\\a", &years_past.to_string());
+                }
+
+                let month = ethiopian_date.next().unwrap(); // won't fail
+                let day = ethiopian_date.next().unwrap(); // won't fail
+
+                // this could still fail because we are not validating the range of the inputs
+                let schedule_date = Zemen::from_eth_cal(
+                    year_str.parse().unwrap(),
+                    werh_from_quex(month.as_str()),
+                    day.as_str().parse().unwrap(),
+                )
+                .map_err(|e| QuexError::EthiopianDate(e, r))?;
+
+                schedules.push(Schedule::new(description, Calender::from(schedule_date)));
+            }
+            _ => unreachable!(),
         }
     }
+    // }
 
     Ok(schedules)
 }
@@ -202,7 +202,7 @@ mod tests {
 
         time::Date::from_calendar_date(2024, time::Month::March, 1).unwrap();
 
-        let input = vec!["2016 neh 1, in ethiopia\n2024 mar 1, sample description.\nd=5, recurring monthly\n1992* feb 29, reacurring yeal: year: \\y and past_time: \\a\n"];
+        let input = "2016 neh 1, in ethiopia\n2024 mar 1, sample description.\nd=5, recurring monthly\n1992* feb 29, reacurring yeal: year: \\y and past_time: \\a\n";
         let output = vec![
             super::Schedule {
                 description: "in ethiopia".to_string(),
