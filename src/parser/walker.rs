@@ -1,36 +1,55 @@
-use std::{ffi::OsStr, fs::File, io::BufRead, path::PathBuf};
+use std::{
+    ffi::OsStr,
+    fs::File,
+    io::{BufRead, BufReader},
+    path::PathBuf,
+};
 
-use super::Schedule;
+use crate::{error::QuexIoError, parser::Schedule};
 
-fn walk_dir(path: PathBuf) -> Vec<Schedule> {
+fn walk_dir(path: &PathBuf) -> Result<Vec<Schedule>, QuexIoError> {
     if path.is_dir() {
-        let mut schedules = vec![];
-        for entry in path.read_dir().unwrap() {
-            schedules.extend(walk_dir(entry.unwrap().path()));
+        let mut schedules: Vec<Schedule> = vec![];
+
+        // generic io failure
+        for entry in path.read_dir().map_err(QuexIoError::new(path.clone()))? {
+            // generic io failure
+            let ent = entry.map_err(QuexIoError::new(path.clone()))?.path();
+
+            let sch = walk_dir(&ent);
+            match sch {
+                Ok(sch) => schedules.extend(sch),
+                // other errors will be reported here
+                Err(e) => println!("Error: {e:#?}"),
+            }
         }
-        schedules
+        Ok(schedules)
     } else {
-        if path.extension().and_then(OsStr::to_str).unwrap() != "md" {
-            return vec![];
+        if path.extension().and_then(OsStr::to_str).unwrap_or("") != "md" {
+            return Ok(vec![]);
         };
 
-        let file = File::open(path).unwrap();
-        // let mut line_number = 0;
+        let file = File::open(path).map_err(QuexIoError::new(path.clone()))?; // unable to open file
+
+        let mut quex_block = 0;
 
         let mut raw_quex = String::new();
-        let reader = std::io::BufReader::new(file);
+        let reader = BufReader::new(file);
         let mut line_iter = reader.lines();
         let mut schedules = vec![];
 
         loop {
             let Some(line) = line_iter.next() else {
-                break schedules;
+                break Ok(schedules);
             };
-            let line = line.unwrap();
+            let line = line.map_err(QuexIoError::new(path.clone()))?; // file read error ? maybe generic
 
             if line == "```quex" {
-                while let Some(line) = line_iter.next() {
-                    let mut line = line.unwrap();
+                quex_block += 1;
+
+                for line in line_iter.by_ref() {
+                    let mut line = line.map_err(QuexIoError::new(path.clone()))?; // file read error ? maybe generic
+
                     // TODO: what if there was EOF before the end of the `quex` block?
                     if line == "```" {
                         break;
@@ -46,7 +65,18 @@ fn walk_dir(path: PathBuf) -> Vec<Schedule> {
             }
 
             if !raw_quex.is_empty() {
-                schedules.extend(super::parse_quex(&raw_quex).unwrap());
+                let schedule = super::parse_quex(&raw_quex);
+                match schedule {
+                    Ok(schedule) => schedules.extend(schedule),
+                    Err(e) => {
+                        // parsing errors will be printed here
+                        println!(
+                            "Error in file: {}\nblock: {quex_block}\n{e:#?}",
+                            path.display()
+                        );
+                    }
+                }
+
                 raw_quex.clear();
             }
         }
@@ -61,7 +91,7 @@ mod tests {
     fn test_walk_dir() {
         let path = PathBuf::from("/home/omer/Documents/Notes/Rust/quex/test_quex_files/");
 
-        let schedules = super::walk_dir(path);
+        let schedules = super::walk_dir(&path);
         println!("{:#?}", schedules);
     }
 }

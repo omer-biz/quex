@@ -1,4 +1,3 @@
-mod extractor;
 mod walker;
 
 use pest::Parser;
@@ -6,10 +5,7 @@ use pest_derive::Parser;
 use time::Date;
 use zemen::Zemen;
 
-use self::extractor::RawQuex;
-use crate::error::QuexError;
-
-type Result<'a, T> = std::result::Result<T, QuexError<'a>>;
+use crate::error::{self, QuexError, Result};
 
 #[enum_dispatch::enum_dispatch]
 trait DisplayDate {
@@ -54,8 +50,10 @@ pub struct QuexParser;
 fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
     let mut schedules = vec![];
 
-    // for raw_quex in raw_quexs {
-    let Some(schedule_list) = QuexParser::parse(Rule::schedule_list, raw_quex)?.next() else {
+    let Some(schedule_list) = QuexParser::parse(Rule::schedule_list, raw_quex)
+        .map_err(|e| QuexError::Parse(Box::new(e)))?
+        .next()
+    else {
         return Ok(schedules);
     };
 
@@ -94,7 +92,7 @@ fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
                     month_from_quex(month.as_str()),
                     day.as_str().parse().unwrap(),
                 )
-                .map_err(|e| QuexError::GregorianDate(e, r))?;
+                .map_err(error::gregorian_date(r))?;
 
                 schedules.push(Schedule::new(description, Calender::from(schedule_date)));
             }
@@ -114,7 +112,7 @@ fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
                 }
 
                 let schedule_date = time::Date::from_calendar_date(today.year(), month, date)
-                    .map_err(|e| QuexError::RecurringMonthly(e, raw_date.as_str()))?;
+                    .map_err(error::recurring_monthly(raw_date.as_str()))?;
 
                 schedules.push(Schedule::new(description, Calender::from(schedule_date)));
             }
@@ -138,20 +136,18 @@ fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
                 let month = ethiopian_date.next().unwrap(); // won't fail
                 let day = ethiopian_date.next().unwrap(); // won't fail
 
-                // this could still fail because we are not validating the range of the inputs
                 let schedule_date = Zemen::from_eth_cal(
                     year_str.parse().unwrap(),
                     werh_from_quex(month.as_str()),
                     day.as_str().parse().unwrap(),
                 )
-                .map_err(|e| QuexError::EthiopianDate(e, r))?;
+                .map_err(error::ethiopian_date(r))?;
 
                 schedules.push(Schedule::new(description, Calender::from(schedule_date)));
             }
             _ => unreachable!(),
         }
     }
-    // }
 
     Ok(schedules)
 }
