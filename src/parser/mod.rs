@@ -5,7 +5,7 @@ use pest_derive::Parser;
 use time::Date;
 use zemen::Zemen;
 
-use crate::error::{self, QuexError, Result};
+use crate::error::{self, Result};
 
 #[enum_dispatch::enum_dispatch]
 trait DisplayDate {
@@ -49,16 +49,14 @@ pub struct QuexParser;
 
 fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
     let mut schedules = vec![];
+    let schedule_list = QuexParser::parse(Rule::schedule_list, raw_quex).map_err(error::qerror)?;
 
-    let Some(schedule_list) = QuexParser::parse(Rule::schedule_list, raw_quex)
-        .map_err(|e| QuexError::Parse(Box::new(e)))?
-        .next()
-    else {
-        return Ok(schedules);
-    };
+    for schedule in schedule_list {
+        let loc = schedule.line_col();
+        let r = schedule.as_str().to_string();
 
-    for schedule in schedule_list.into_inner() {
         let mut schedule = schedule.into_inner();
+
         let Some(date) = schedule.next() else {
             continue;
         };
@@ -67,7 +65,6 @@ fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
         match date.as_rule() {
             Rule::gregorian_date => {
                 let mut gregorian_date = date.into_inner();
-                let r = gregorian_date.as_str();
 
                 let year = gregorian_date.next().unwrap(); // won't fail
                 let mut year_str = year.as_str();
@@ -92,14 +89,15 @@ fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
                     month_from_quex(month.as_str()),
                     day.as_str().parse().unwrap(),
                 )
-                .map_err(error::gregorian_date(r))?;
+                .map_err(error::invalid_date(loc, r))?;
 
                 schedules.push(Schedule::new(description, Calender::from(schedule_date)));
             }
             Rule::recurring_monthly => {
                 let today: time::Date = time::OffsetDateTime::now_utc().date();
                 let raw_date = date;
-                let date = raw_date
+
+                let day = raw_date
                     .as_str()
                     .strip_prefix("d=")
                     .and_then(|n| n.parse::<u8>().ok())
@@ -107,18 +105,20 @@ fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
 
                 let mut month = today.month();
 
-                if date < today.day() {
+                if day < today.day() {
                     month = today.month().next();
                 }
 
-                let schedule_date = time::Date::from_calendar_date(today.year(), month, date)
-                    .map_err(error::recurring_monthly(raw_date.as_str()))?;
+                let schedule_date = time::Date::from_calendar_date(today.year(), month, day)
+                    .map_err(error::invalid_date(loc, r))?;
 
                 schedules.push(Schedule::new(description, Calender::from(schedule_date)));
             }
+            // TODO: instead of using ethiopian_date or recurring_monthly, or use gregorian_date
+            // make a generic error that has the line, line number, and column number,
+            // when errors happen on converting dates.
             Rule::ethiopian_date => {
                 let mut ethiopian_date = date.into_inner();
-                let r = ethiopian_date.as_str();
 
                 let year = ethiopian_date.next().unwrap(); // won't fail
                 let mut year_str = year.as_str();
@@ -141,7 +141,7 @@ fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
                     werh_from_quex(month.as_str()),
                     day.as_str().parse().unwrap(),
                 )
-                .map_err(error::ethiopian_date(r))?;
+                .map_err(error::invalid_date(loc, r))?;
 
                 schedules.push(Schedule::new(description, Calender::from(schedule_date)));
             }

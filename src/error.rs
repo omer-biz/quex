@@ -1,75 +1,129 @@
-use std::error::Error;
 use std::fmt;
 use std::fmt::Debug;
 use std::path::PathBuf;
 
 use crate::parser::Rule;
 
-pub type Result<'a, T> = std::result::Result<T, QuexError<'a>>;
+pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(thiserror::Error)]
-pub enum QuexError<'a> {
-    #[error("Invalid Ethiopian date: \"{}\"", .1)]
-    EthiopianDate(#[source] zemen::error::Error, &'a str),
-
-    #[error("Invalid Gregorian date: \"{1}\"")]
-    GregorianDate(#[source] time::error::ComponentRange, &'a str),
-
-    #[error("Recurring monthly out of range: \"{1}\"")]
-    RecurringMonthly(#[source] time::error::ComponentRange, &'a str),
-
-    #[error("Parse error")]
-    Parse(#[source] Box<pest::error::Error<Rule>>),
+#[derive(thiserror::Error, Debug)]
+pub struct Error {
+    kind: ValueError,
+    location: (usize, usize),
+    line: String,
+    path: Option<PathBuf>,
 }
 
-impl<'a> Debug for QuexError<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} ", self)?;
+impl Error {
+    pub fn with_path(mut self, path: &PathBuf) -> Self {
+        self.path = Some(path.to_path_buf());
+        self
+    }
 
-        if let Some(source) = self.source() {
-            write!(f, "Caused by:\n\t{}", source)?;
-        }
-
-        Ok(())
+    pub fn add_line(mut self, line: usize) -> Self {
+        self.location.0 = self.location.0 + line;
+        self
     }
 }
 
-pub fn ethiopian_date<'a>(r: &'a str) -> impl FnOnce(zemen::error::Error) -> QuexError<'a> {
-    return |e: zemen::error::Error| QuexError::EthiopianDate(e, r);
+#[derive(thiserror::Error, Debug)]
+pub enum ValueError {
+    // #[error(transparent)]
+    // InvalidDate(#[from] InvalidDate),
+    #[error(transparent)]
+    Zemen(#[from] zemen::error::Error),
+
+    #[error(transparent)]
+    Date(#[from] time::error::ComponentRange),
+
+    #[error("can not parse input")]
+    Parse(String),
 }
 
-pub fn gregorian_date<'a>(r: &'a str) -> impl FnOnce(time::error::ComponentRange) -> QuexError<'a> {
-    return |e: time::error::ComponentRange| QuexError::GregorianDate(e, r);
-}
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let msg = match &self.kind {
+            ValueError::Zemen(_) => "invalid ethiopian date",
+            ValueError::Date(_) => "invalid gregorian date",
+            ValueError::Parse(msg) => msg.as_str(),
+        };
 
-pub fn recurring_monthly<'a>(
-    r: &'a str,
-) -> impl FnOnce(time::error::ComponentRange) -> QuexError<'a> {
-    return |e: time::error::ComponentRange| QuexError::RecurringMonthly(e, r);
-}
+        let path = self
+            .path
+            .as_ref()
+            .map(|p| p.to_string_lossy())
+            .unwrap_or_default();
 
-#[derive(thiserror::Error)]
-#[error("I/O error while processing file: {file}")]
-pub struct QuexIoError {
-    #[source]
-    source: std::io::Error,
-    file: PathBuf,
-}
+        let spacing = " ".repeat(self.location.0.to_string().len());
 
-impl QuexIoError {
-    pub fn new(file: PathBuf) -> impl FnOnce(std::io::Error) -> Self {
-        return |source| QuexIoError { source, file };
+        write!(
+            f,
+            "error: {}\n  --> {}:{}:{}\n{spacing}  |\n {} | {} \n{spacing}  |\n  = {}\n\n",
+            self.kind,
+            path,
+            self.location.0,
+            self.location.1,
+            self.location.0,
+            self.line.trim(),
+            msg
+        )
     }
 }
 
-impl Debug for QuexIoError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} ", self)?;
+pub fn qerror(e: pest::error::Error<Rule>) -> Error {
+    let line = e.line().to_string();
 
-        if let Some(source) = self.source() {
-            write!(f, "Caused by:\n\t{}", source)?;
+    let location = match &e.line_col {
+        pest::error::LineColLocation::Pos(ref loc) => loc,
+        pest::error::LineColLocation::Span(_, ref loc) => loc,
+    };
+
+    Error {
+        location: (location.0, location.1),
+        kind: ValueError::Parse(e.variant.message().to_string()),
+        line,
+        path: None,
+    }
+}
+
+pub fn invalid_date<E: Into<ValueError>>(
+    location: (usize, usize),
+    line: String,
+) -> impl FnOnce(E) -> Error {
+    move |e: E| Error {
+        kind: e.into(),
+        location,
+        line,
+        path: None,
+    }
+}
+
+pub mod io {
+    use std::{error::Error as StdError, fmt, path::PathBuf};
+
+    #[derive(thiserror::Error)]
+    #[error("I/O error while processing file: {file}")]
+    pub struct Error {
+        #[source]
+        source: std::io::Error,
+        file: PathBuf,
+    }
+
+    impl Error {
+        pub fn new(file: PathBuf) -> impl FnOnce(std::io::Error) -> Self {
+            |source| Error { source, file }
         }
+    }
 
-        Ok(())
+    impl fmt::Debug for Error {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "{} ", self)?;
+
+            if let Some(source) = self.source() {
+                write!(f, "Caused by:\n\t{}", source)?;
+            }
+
+            Ok(())
+        }
     }
 }

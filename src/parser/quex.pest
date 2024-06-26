@@ -59,4 +59,4 @@ schedule = {
     (recurring_monthly | gregorian_date | ethiopian_date) ~ "," ~ description ~ "\n"?
 }
 
-schedule_list = { SOI ~ schedule* ~ EOI}
+schedule_list = _{ SOI ~ schedule* ~ EOI}
