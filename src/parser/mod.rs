@@ -1,4 +1,6 @@
-mod walker;
+pub mod walker;
+
+use std::fmt;
 
 use pest::Parser;
 use pest_derive::Parser;
@@ -12,11 +14,28 @@ trait DisplayDate {
     fn date(&self) -> (i32, String, u8);
 }
 
+pub trait JulianDayNumber {
+    fn julian_day(&self) -> i32;
+}
+
 #[enum_dispatch::enum_dispatch(DisplayDate)]
 #[derive(Debug, PartialEq)]
 pub enum Calender {
     Date,
     Zemen,
+}
+
+impl fmt::Display for Calender {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Calender::Date(d) => {
+                write!(f, "{}, {} {} {}", d.weekday(), d.month(), d.day(), d.year())
+            }
+            Calender::Zemen(d) => {
+                write!(f, "{}, {} {} {}", d.weekday(), d.month(), d.day(), d.year())
+            }
+        }
+    }
 }
 
 impl DisplayDate for Date {
@@ -35,6 +54,21 @@ impl DisplayDate for Zemen {
 pub struct Schedule {
     pub description: String,
     pub date: Calender,
+}
+
+impl fmt::Display for Schedule {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}: {}", self.date, self.description)
+    }
+}
+
+impl JulianDayNumber for Calender {
+    fn julian_day(&self) -> i32 {
+        match &self {
+            Calender::Date(d) => d.to_julian_day(),
+            Calender::Zemen(d) => d.to_jdn(),
+        }
+    }
 }
 
 impl Schedule {

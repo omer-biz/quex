@@ -28,8 +28,6 @@ impl Error {
 
 #[derive(thiserror::Error, Debug)]
 pub enum ValueError {
-    // #[error(transparent)]
-    // InvalidDate(#[from] InvalidDate),
     #[error(transparent)]
     Zemen(#[from] zemen::error::Error),
 

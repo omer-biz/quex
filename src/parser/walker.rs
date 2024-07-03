@@ -13,7 +13,7 @@ use crate::{
 type Schedules = Vec<Schedule>;
 type QErrors = Vec<Error>;
 
-fn walk_dir(path: &PathBuf) -> Result<(Schedules, QErrors), io::Error> {
+pub fn walk_dir(path: &PathBuf) -> Result<(Schedules, QErrors), io::Error> {
     if path.is_dir() {
         let mut schedules: Schedules = vec![];
         let mut errors = vec![];
@@ -26,11 +26,6 @@ fn walk_dir(path: &PathBuf) -> Result<(Schedules, QErrors), io::Error> {
 
             schedules.extend(schs);
             errors.extend(errs);
-            // match sch {
-            //     Ok(sch) => schedules.extend(sch),
-            //     // other errors will be reported here
-            //     Err(e) => println!("Error: {e:#?}"),
-            // }
         }
         Ok((schedules, errors))
     } else {
@@ -38,7 +33,6 @@ fn walk_dir(path: &PathBuf) -> Result<(Schedules, QErrors), io::Error> {
             // TODO: error `file` is not a markdown file
             return Ok((vec![], vec![]));
         };
-        println!("Processing file: {}", path.display());
 
         let file = File::open(path).map_err(io::Error::new(path.clone()))?; // unable to open file
 
@@ -94,11 +88,6 @@ mod tests {
         let path = PathBuf::from("test_quex_files/");
 
         let (schedules, errors) = super::walk_dir(&path).unwrap();
-        println!("{:#?}", schedules);
 
-        // TODO: pest implementation is leaking, fix the error messages.
-        for err in errors {
-            eprintln!("{err}");
-        }
     }
 }
