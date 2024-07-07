@@ -29,10 +29,24 @@ impl fmt::Display for Calender {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Calender::Date(d) => {
-                write!(f, "{}, {} {} {}", d.weekday(), d.month(), d.day(), d.year())
+                write!(
+                    f,
+                    "{}, {} {} {}",
+                    d.weekday().to_string().split_at(3).0,
+                    d.month(),
+                    d.day(),
+                    d.year()
+                )
             }
             Calender::Zemen(d) => {
-                write!(f, "{}, {} {} {}", d.weekday(), d.month(), d.day(), d.year())
+                write!(
+                    f,
+                    "{}, {} {} {}",
+                    d.weekday().short_name(),
+                    d.month(),
+                    d.day(),
+                    d.year()
+                )
             }
         }
     }

@@ -12,9 +12,23 @@ pub fn view_schedules(path: PathBuf, _json: Option<bool>) {
 
     schedules
         .iter()
-        .filter(|sch| {
+        .filter_map(|sch| {
             let diff = sch.date.julian_day() - jdn_today;
-            diff < 14 && diff > -3
+            match diff < 14 && diff > -3 {
+                true => Some((diff, sch)),
+                false => None,
+            }
         })
-        .for_each(|sch| println!("{}", sch));
+        .for_each(|(diff, sch)| {
+            println!(
+                "{}{}",
+                match diff {
+                    0 => "Today, ",
+                    1 => "Tomorrow, ",
+                    -1 => "Yesterday, ",
+                    _ => "",
+                },
+                sch
+            )
+        });
 }
