@@ -98,6 +98,7 @@ pub struct QuexParser;
 fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
     let mut schedules = vec![];
     let schedule_list = QuexParser::parse(Rule::schedule_list, raw_quex).map_err(error::qerror)?;
+    let today: time::Date = time::OffsetDateTime::now_utc().date();
 
     for schedule in schedule_list {
         let loc = schedule.line_col();
@@ -133,7 +134,9 @@ fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
                 let day = gregorian_date.next().unwrap();
 
                 let schedule_date = time::Date::from_calendar_date(
-                    year_str.parse().unwrap(),
+                    // TODO: check the current month and only report the future
+                    // bithday year.
+                    year_str.parse().unwrap_or(today.year()),
                     month_from_quex(month.as_str()),
                     day.as_str().parse().unwrap(),
                 )
@@ -142,7 +145,6 @@ fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
                 schedules.push(Schedule::new(description, Calender::from(schedule_date)));
             }
             Rule::recurring_monthly => {
-                let today: time::Date = time::OffsetDateTime::now_utc().date();
                 let raw_date = date;
 
                 let day = raw_date
