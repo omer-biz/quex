@@ -1,34 +1,33 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, process::Command};
 
-use crate::parser::JulianDayNumber;
+pub use parser::walker::{QErrors, Schedules};
+
+pub use crate::parser::JulianDayNumber;
+pub use crate::parser::Schedule;
 
 pub mod cli;
 mod error;
 mod parser;
 
-pub fn view_schedules(path: PathBuf, _json: Option<bool>) {
-    let (schedules, _parse_errors) = parser::walker::walk_dir(&path).unwrap();
-    let jdn_today = time::OffsetDateTime::now_utc().date().to_julian_day();
+pub fn get_schedules(path: PathBuf) -> (Schedules, QErrors) {
+    parser::walker::walk_dir(&path).unwrap()
+}
 
-    schedules
-        .iter()
-        .filter_map(|sch| {
-            let diff = sch.date.julian_day() - jdn_today;
-            match diff < 14 && diff > -3 {
-                true => Some((diff, sch)),
-                false => None,
-            }
-        })
-        .for_each(|(diff, sch)| {
-            println!(
-                "{}{}",
-                match diff {
-                    0 => "Today, ",
-                    1 => "Tomorrow, ",
-                    -1 => "Yesterday, ",
-                    _ => "",
-                },
-                sch
-            )
-        });
+pub fn view_schedules(schedules: Vec<(i32, Schedule)>) {
+    schedules.iter().for_each(|(diff, sch)| {
+        println!(
+            "{}{}",
+            match diff {
+                0 => "Today, ",
+                1 => "Tomorrow, ",
+                -1 => "Yesterday, ",
+                _ => "",
+            },
+            sch
+        )
+    });
+}
+
+pub fn edit_schedules(path: PathBuf, editor: String) {
+    Command::new(editor).arg(path).status().unwrap();
 }

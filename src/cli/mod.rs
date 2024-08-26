@@ -20,6 +20,14 @@ pub struct Cli {
     /// Subcommands
     #[clap(subcommand)]
     pub command: Option<Command>,
+
+    /// How many days into the future the report extends. Default: 14
+    #[clap(short, long, default_value = "14")]
+    pub future: i32,
+
+    /// How many days into the past the report extends. Default: 3
+    #[clap(short, long, default_value = "3")]
+    pub past: i32,
 }
 
 #[derive(Subcommand, Debug)]
@@ -31,6 +39,22 @@ pub enum Command {
         long_about = "open the calendar file with the configured editor, default is nvim"
     )]
     Edit,
+
+    #[clap(name = "week", alias = "w", about = "view calendar file for the week")]
+    Week,
+
+    #[clap(
+        name = "month",
+        alias = "m",
+        about = "view calendar file for the month"
+    )]
+    Month,
+
+    #[clap(name = "year", alias = "y", about = "view calendar file for the year")]
+    Year,
+
+    #[clap(name = "all", alias = "a", about = "view calendar file for all time")]
+    All,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
