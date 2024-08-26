@@ -12,6 +12,7 @@ fn main() {
         command,
         future,
         past,
+        errors,
     } = Cli::parse();
 
     let app_config: Config = config
@@ -29,7 +30,7 @@ fn main() {
     }
 
     // Filtering options
-    let (schedules, _parse_errors) = quex::get_schedules(quex_path.clone());
+    let (schedules, parse_errors) = quex::get_schedules(quex_path.clone());
 
     let filter_options =
         filter_options(command.as_ref()).unwrap_or(FilterOptions::Ranged { future, past });
@@ -48,6 +49,10 @@ fn main() {
             sch
         )
     });
+
+    if errors {
+        parse_errors.iter().for_each(|err| print!("{}", err));
+    }
 }
 
 fn filter_schedules(

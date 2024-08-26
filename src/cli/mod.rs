@@ -28,6 +28,10 @@ pub struct Cli {
     /// How many days into the past the report extends. Default: 3
     #[clap(short, long, default_value = "3")]
     pub past: i32,
+
+    /// Show parsing errors
+    #[clap(long, default_value = "false")]
+    pub errors: bool,
 }
 
 #[derive(Subcommand, Debug)]
