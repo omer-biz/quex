@@ -4,6 +4,7 @@ use std::fmt;
 
 use pest::Parser;
 use pest_derive::Parser;
+use serde_derive::Serialize;
 use time::Date;
 use zemen::Zemen;
 
@@ -23,6 +24,15 @@ pub trait JulianDayNumber {
 pub enum Calender {
     Date,
     Zemen,
+}
+
+impl serde::Serialize for Calender {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.to_string().serialize(serializer)
+    }
 }
 
 impl fmt::Display for Calender {
@@ -64,7 +74,7 @@ impl DisplayDate for Zemen {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Schedule {
     pub description: String,
     pub date: Calender,

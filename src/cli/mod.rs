@@ -1,10 +1,15 @@
 use std::path::PathBuf;
 
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Parser, Debug)]
 pub struct Cli {
+    /// Subcommands
+    #[clap(subcommand)]
+    pub command: Option<Command>,
+    /// -------------------------
+
     /// path to config file
     #[clap(short, long)]
     pub config: Option<PathBuf>,
@@ -17,21 +22,27 @@ pub struct Cli {
     #[clap(short, long)]
     pub editor: Option<String>,
 
-    /// Subcommands
-    #[clap(subcommand)]
-    pub command: Option<Command>,
-
-    /// How many days into the future the report extends. Default: 14
-    #[clap(short, long, default_value = "14")]
+    /// How many days into the future the report extends.
+    #[clap(short, long, default_value_t = 14)]
     pub future: i32,
 
-    /// How many days into the past the report extends. Default: 3
-    #[clap(short, long, default_value = "3")]
+    /// How many days into the past the report extends.
+    #[clap(short, long, default_value_t = 3)]
     pub past: i32,
 
     /// Show parsing errors
     #[clap(long, default_value = "false")]
     pub errors: bool,
+
+    /// Specifiy the format to use for printing the schedules
+    #[clap(long, default_value_t = Format::Plain, value_enum)]
+    pub format: Format,
+}
+
+#[derive(Debug, PartialEq, ValueEnum, Clone)]
+pub enum Format {
+    Json,
+    Plain,
 }
 
 #[derive(Subcommand, Debug)]
@@ -44,20 +55,20 @@ pub enum Command {
     )]
     Edit,
 
-    #[clap(name = "week", alias = "w", about = "view calendar file for the week")]
+    #[clap(name = "week", alias = "w", about = "view schedules file for the week")]
     Week,
 
     #[clap(
         name = "month",
         alias = "m",
-        about = "view calendar file for the month"
+        about = "view schedules file for the month"
     )]
     Month,
 
-    #[clap(name = "year", alias = "y", about = "view calendar file for the year")]
+    #[clap(name = "year", alias = "y", about = "view schedules file for the year")]
     Year,
 
-    #[clap(name = "all", alias = "a", about = "view calendar file for all time")]
+    #[clap(name = "all", alias = "a", about = "view schedules file for all time")]
     All,
 }
 

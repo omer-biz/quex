@@ -10,8 +10,8 @@ use crate::{
     parser::Schedule,
 };
 
-type Schedules = Vec<Schedule>;
-type QErrors = Vec<Error>;
+pub type Schedules = Vec<Schedule>;
+pub type QErrors = Vec<Error>;
 
 pub fn walk_dir(path: &PathBuf) -> Result<(Schedules, QErrors), io::Error> {
     if path.is_dir() {
