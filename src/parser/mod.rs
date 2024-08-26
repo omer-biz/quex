@@ -117,8 +117,9 @@ fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
 
                 let year = gregorian_date.next().unwrap(); // won't fail
                 let mut year_str = year.as_str();
+                let is_named_year = year.as_rule() == Rule::named_yearly;
 
-                if year.as_rule() == Rule::named_yearly {
+                if is_named_year {
                     let today: time::Date = time::OffsetDateTime::now_utc().date();
 
                     year_str = year.as_str().strip_suffix('*').unwrap(); // won't fail
@@ -139,7 +140,7 @@ fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
                     year_str
                         .parse()
                         .map(|year| {
-                            if year < today.year() {
+                            if year < today.year() && is_named_year {
                                 return today.year();
                             }
                             return year;
