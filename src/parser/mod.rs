@@ -1,5 +1,7 @@
 pub mod walker;
 
+mod utils;
+
 use std::fmt;
 
 use pest::Parser;
@@ -156,7 +158,7 @@ fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
                             return year;
                         })
                         .unwrap_or(today.year()),
-                    month_from_quex(month.as_str()),
+                    utils::month_from_quex(month.as_str()),
                     day.as_str().parse().unwrap(),
                 )
                 .map_err(error::invalid_date(loc, r))?;
@@ -207,7 +209,7 @@ fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
 
                 let schedule_date = Zemen::from_eth_cal(
                     year_str.parse().unwrap(),
-                    werh_from_quex(month.as_str()),
+                    utils::werh_from_quex(month.as_str()),
                     day.as_str().parse().unwrap(),
                 )
                 .map_err(error::invalid_date(loc, r))?;
@@ -219,43 +221,6 @@ fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
     }
 
     Ok(schedules)
-}
-
-fn werh_from_quex(as_str: &str) -> zemen::Werh {
-    match as_str {
-        "mes" | "መስከ" => zemen::Werh::Meskerem,
-        "tik" | "ጥቅም" => zemen::Werh::Tikimit,
-        "hed" | "ህዳር" => zemen::Werh::Hedar,
-        "tah" | "ታኅሣ" => zemen::Werh::Tahasass,
-        "tir" | "ጥር" => zemen::Werh::Tir,
-        "yek" | "የካቲ" => zemen::Werh::Yekatit,
-        "meg" | "መጋቢ" => zemen::Werh::Megabit,
-        "miy" | "ሚያዝ" => zemen::Werh::Miyazia,
-        "gin" | "ግንቦ" => zemen::Werh::Ginbot,
-        "sen" | "ሴኒ" => zemen::Werh::Sene,
-        "ham" | "ሐምሌ" => zemen::Werh::Hamle,
-        "neh" | "ነሐሴ" => zemen::Werh::Nehase,
-        "pua" | "ጳጉሜ" => zemen::Werh::Puagme,
-        _ => unreachable!(),
-    }
-}
-
-fn month_from_quex(month: &str) -> time::Month {
-    match month {
-        "jan" => time::Month::January,
-        "feb" => time::Month::February,
-        "mar" => time::Month::March,
-        "apr" => time::Month::April,
-        "may" => time::Month::May,
-        "jun" => time::Month::June,
-        "jul" => time::Month::July,
-        "aug" => time::Month::August,
-        "sep" => time::Month::September,
-        "oct" => time::Month::October,
-        "nov" => time::Month::November,
-        "dec" => time::Month::December,
-        _ => unreachable!(),
-    }
 }
 
 #[cfg(test)]
