@@ -1,5 +1,6 @@
 pub mod walker;
 
+mod time_wrapper;
 mod utils;
 
 use std::fmt;
@@ -80,11 +81,18 @@ impl DisplayDate for Zemen {
 pub struct Schedule {
     pub description: String,
     pub date: Calender,
+    pub time: Option<time_wrapper::TimeWrapper>,
 }
 
 impl fmt::Display for Schedule {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}: {}", self.date, self.description)
+        let time = self
+            .time
+            .as_ref()
+            .map(|t| t.to_string())
+            .unwrap_or("".to_string());
+
+        write!(f, "{}, {}: {}", self.date, time, self.description)
     }
 }
 
@@ -98,8 +106,16 @@ impl JulianDayNumber for Calender {
 }
 
 impl Schedule {
-    pub fn new(description: String, date: Calender) -> Self {
-        Schedule { description, date }
+    pub fn new(
+        description: String,
+        date: Calender,
+        time: Option<time_wrapper::TimeWrapper>,
+    ) -> Self {
+        Schedule {
+            description,
+            date,
+            time,
+        }
     }
 }
 
@@ -114,15 +130,16 @@ fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
 
     for schedule in schedule_list {
         let loc = schedule.line_col();
-        let r = schedule.as_str().to_string();
+        let schedule_line = schedule.as_str().to_string();
 
         let mut schedule = schedule.into_inner();
 
         let Some(date) = schedule.next() else {
             continue;
         };
-        let mut description = schedule.next().unwrap().as_str().to_string(); // won't fail
 
+        let (time, mut description) = utils::get_time_description(&mut schedule)
+            .map_err(error::invalid_format(loc, schedule_line.clone()))?;
         match date.as_rule() {
             Rule::gregorian_date => {
                 let mut gregorian_date = date.into_inner();
@@ -161,9 +178,13 @@ fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
                     utils::month_from_quex(month.as_str()),
                     day.as_str().parse().unwrap(),
                 )
-                .map_err(error::invalid_date(loc, r))?;
+                .map_err(error::invalid_format(loc, schedule_line))?;
 
-                schedules.push(Schedule::new(description, Calender::from(schedule_date)));
+                schedules.push(Schedule::new(
+                    description,
+                    Calender::from(schedule_date),
+                    time,
+                ));
             }
             Rule::recurring_monthly => {
                 let raw_date = date;
@@ -181,9 +202,13 @@ fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
                 }
 
                 let schedule_date = time::Date::from_calendar_date(today.year(), month, day)
-                    .map_err(error::invalid_date(loc, r))?;
+                    .map_err(error::invalid_format(loc, schedule_line))?;
 
-                schedules.push(Schedule::new(description, Calender::from(schedule_date)));
+                schedules.push(Schedule::new(
+                    description,
+                    Calender::from(schedule_date),
+                    time,
+                ));
             }
             // TODO: instead of using ethiopian_date or recurring_monthly, or use gregorian_date
             // make a generic error that has the line, line number, and column number,
@@ -212,9 +237,13 @@ fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
                     utils::werh_from_quex(month.as_str()),
                     day.as_str().parse().unwrap(),
                 )
-                .map_err(error::invalid_date(loc, r))?;
+                .map_err(error::invalid_format(loc, schedule_line))?;
 
-                schedules.push(Schedule::new(description, Calender::from(schedule_date)));
+                schedules.push(Schedule::new(
+                    description,
+                    Calender::from(schedule_date),
+                    time,
+                ));
             }
             _ => unreachable!(),
         }
@@ -239,22 +268,28 @@ mod tests {
             super::Schedule {
                 description: "in ethiopia".to_string(),
                 date: Calender::from(Zemen::from_eth_cal(2016, zemen::Werh::Nehase, 1).unwrap()),
+                time: None,
             },
             Schedule {
                 description: "sample description.".to_string(),
                 date: Calender::from(
                     Date::from_calendar_date(2024, time::Month::March, 1).unwrap(),
                 ),
+                time: None,
             },
             Schedule {
                 description: "recurring monthly".to_string(),
-                date: Calender::from(Date::from_calendar_date(2024, time::Month::July, 5).unwrap()),
+                date: Calender::from(
+                    Date::from_calendar_date(2024, time::Month::July.next(), 5).unwrap(),
+                ),
+                time: None,
             },
             Schedule {
                 description: "reacurring yeal: year: 1992 and past_time: 32".to_string(),
                 date: Calender::from(
                     Date::from_calendar_date(1992, time::Month::February, 29).unwrap(),
                 ),
+                time: None,
             },
         ];
 
