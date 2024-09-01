@@ -70,7 +70,7 @@ pub fn walk_dir(path: &PathBuf) -> Result<(Schedules, QErrors), io::FileError> {
                 let schedule = super::parse_quex(&raw_quex);
                 match schedule {
                     Ok(schedule) => schedules.extend(schedule),
-                    Err(e) => errors.push(e.with_path(&path).add_line(line_num + 1)),
+                    Err(e) => errors.push(e.with_path(path).add_line(line_num + 1)),
                 }
 
                 raw_quex.clear();

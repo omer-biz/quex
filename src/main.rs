@@ -12,7 +12,7 @@ fn main() {
         command,
         future,
         past,
-        errors: _,
+        errors,
         format,
     } = Cli::parse();
 
@@ -31,7 +31,7 @@ fn main() {
     }
 
     // Filtering options
-    let (schedules, _parse_errors) = quex::get_schedules(quex_path.clone());
+    let (schedules, parse_errors) = quex::get_schedules(quex_path.clone());
 
     let filter_options =
         filter_options(command.as_ref()).unwrap_or(FilterOptions::Ranged { future, past });
@@ -39,6 +39,9 @@ fn main() {
     let schedules = filter_schedules(schedules, filter_options);
 
     quex::view_schedules(schedules, &format);
+    if errors {
+        quex::view_parse_errors(parse_errors, &format);
+    }
 }
 
 fn filter_schedules(
@@ -62,7 +65,7 @@ fn filter_schedules(
             .collect(),
         FilterOptions::All => schedules
             .into_iter()
-            .filter_map(|sch| Some((sch.date.julian_day() - jdn_today, sch)))
+            .map(|sch| (sch.date.julian_day() - jdn_today, sch))
             .collect(),
     }
 }

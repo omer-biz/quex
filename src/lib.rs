@@ -34,6 +34,16 @@ pub fn view_schedules(schedules: Vec<(i32, Schedule)>, format: &Format) {
     }
 }
 
+pub fn view_parse_errors(errors: QErrors, format: &Format) {
+    match format {
+        Format::Json => {
+            let json = serde_json::to_string(&errors).unwrap();
+            println!("{}", json);
+        }
+        Format::Plain => errors.iter().for_each(|err| print!("{}", err)),
+    }
+}
+
 pub fn edit_schedules(path: PathBuf, editor: String) {
     Command::new(editor).arg(path).status().unwrap();
 }

@@ -1,12 +1,14 @@
 use std::fmt;
 use std::fmt::Debug;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+
+use serde_derive::Serialize;
 
 use crate::parser::Rule;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(thiserror::Error, Debug)]
+#[derive(thiserror::Error, Debug, Serialize)]
 pub struct Error {
     kind: ValueError,
     location: (usize, usize),
@@ -15,13 +17,13 @@ pub struct Error {
 }
 
 impl Error {
-    pub fn with_path(mut self, path: &PathBuf) -> Self {
+    pub fn with_path(mut self, path: &Path) -> Self {
         self.path = Some(path.to_path_buf());
         self
     }
 
     pub fn add_line(mut self, line: usize) -> Self {
-        self.location.0 = self.location.0 + line;
+        self.location.0 += line;
         self
     }
 }
@@ -36,6 +38,15 @@ pub enum ValueError {
 
     #[error("can not parse input")]
     Parse(String),
+}
+
+impl serde::Serialize for ValueError {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.to_string().as_str())
+    }
 }
 
 impl fmt::Display for Error {
@@ -84,7 +95,7 @@ pub fn qerror(e: pest::error::Error<Rule>) -> Error {
     }
 }
 
-pub fn invalid_date<E: Into<ValueError>>(
+pub fn invalid_format<E: Into<ValueError>>(
     location: (usize, usize),
     line: String,
 ) -> impl FnOnce(E) -> Error {
