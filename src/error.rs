@@ -96,24 +96,27 @@ pub fn invalid_date<E: Into<ValueError>>(
     }
 }
 
+// The name `io` is not a good idea, it being used in the standard library.
+// So instead of judging please suggest a better name.
+// For now I'm renaming the `Error` struct to `FileError`.
 pub mod io {
     use std::{error::Error as StdError, fmt, path::PathBuf};
 
     #[derive(thiserror::Error)]
     #[error("I/O error while processing file: {file}")]
-    pub struct Error {
+    pub struct FileError {
         #[source]
         source: std::io::Error,
         file: PathBuf,
     }
 
-    impl Error {
+    impl FileError {
         pub fn new(file: PathBuf) -> impl FnOnce(std::io::Error) -> Self {
-            |source| Error { source, file }
+            |source| FileError { source, file }
         }
     }
 
-    impl fmt::Debug for Error {
+    impl fmt::Debug for FileError {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(f, "{} ", self)?;
 
