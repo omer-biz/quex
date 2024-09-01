@@ -169,10 +169,12 @@ fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
                     year_str
                         .parse()
                         .map(|year| {
+                            // helpful when printing all the past schedules.
+                            // It won't replace their years with the current year.
                             if year < today.year() && is_named_year {
                                 return today.year();
                             }
-                            return year;
+                            year
                         })
                         .unwrap_or(today.year()),
                     utils::month_from_quex(month.as_str()),
