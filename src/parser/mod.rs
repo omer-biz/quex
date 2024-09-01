@@ -146,7 +146,7 @@ fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
 
                 let schedule_date = time::Date::from_calendar_date(
                     // TODO: check the current month and only report the future
-                    // bithday year.
+                    // birthday year.
                     year_str
                         .parse()
                         .map(|year| {

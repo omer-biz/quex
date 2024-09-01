@@ -8,8 +8,7 @@ pub struct Cli {
     /// Subcommands
     #[clap(subcommand)]
     pub command: Option<Command>,
-    /// -------------------------
-
+    // -------------------------
     /// path to config file
     #[clap(short, long)]
     pub config: Option<PathBuf>,
@@ -34,7 +33,7 @@ pub struct Cli {
     #[clap(long, default_value = "false")]
     pub errors: bool,
 
-    /// Specifiy the format to use for printing the schedules
+    /// Specify the format to use for printing the schedules
     #[clap(long, default_value_t = Format::Plain, value_enum)]
     pub format: Format,
 }
