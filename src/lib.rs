@@ -20,16 +20,19 @@ pub fn view_schedules(schedules: Vec<(i32, Schedule)>, format: &Format) {
             println!("{}", json);
         }
         Format::Plain => schedules.iter().for_each(|(diff, sch)| {
-            println!(
-                "{}{}",
-                match diff {
-                    0 => "Today, ",
-                    1 => "Tomorrow, ",
-                    -1 => "Yesterday, ",
-                    _ => "",
-                },
-                sch
-            )
+            let time = sch
+                .time
+                .as_ref()
+                .map(|t| format!(", {t}"))
+                // .map(|t| t.to_string())
+                .unwrap_or("".to_string());
+
+            match diff {
+                0 => println!("Today{}, {}", time, sch.description),
+                1 => println!("Tomorrow{}, {}", time, sch.description),
+                -1 => println!("Yesterday{}, {}", time, sch.description),
+                _ => println!("{}", sch),
+            }
         }),
     }
 }

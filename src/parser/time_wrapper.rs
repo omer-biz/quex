@@ -1,3 +1,4 @@
+use std::fmt;
 use std::ops::Deref;
 
 #[derive(Debug, PartialEq)]
@@ -23,5 +24,12 @@ impl Deref for TimeWrapper {
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl fmt::Display for TimeWrapper {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let t = self.0;
+        write!(f, "{:02}:{:02}:{:02} ", t.hour(), t.minute(), t.second())
     }
 }

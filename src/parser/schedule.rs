@@ -107,6 +107,6 @@ impl fmt::Display for Schedule {
             .map(|t| t.to_string())
             .unwrap_or("".to_string());
 
-        write!(f, "{}, {}: {}", self.date, time, self.description)
+        write!(f, "{}, {}{}", self.date, time, self.description)
     }
 }
