@@ -140,6 +140,7 @@ fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
 
         let (time, mut description) = utils::get_time_description(&mut schedule)
             .map_err(error::invalid_format(loc, schedule_line.clone()))?;
+
         match date.as_rule() {
             Rule::gregorian_date => {
                 let mut gregorian_date = date.into_inner();
@@ -256,6 +257,7 @@ fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
 
 #[cfg(test)]
 mod tests {
+
     #[test]
     fn test_parse_quex() {
         use super::Calender;
@@ -265,7 +267,11 @@ mod tests {
 
         time::Date::from_calendar_date(2024, time::Month::March, 1).unwrap();
 
-        let input = "2016 neh 1, in ethiopia\n2024 mar 1, sample description.\nd=5, recurring monthly\n1992* feb 29, reacurring yeal: year: \\y and past_time: \\a\n";
+        let input = r#"2016 neh 1, in ethiopia
+2024 mar 1, sample description.
+d=5, recurring monthly
+1992* feb 29, reacurring yeal: year: \y and past_time: \a"#;
+
         let output = vec![
             super::Schedule {
                 description: "in ethiopia".to_string(),

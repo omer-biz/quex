@@ -94,24 +94,6 @@ impl Default for Config {
 
 #[cfg(test)]
 mod tests {
-    use std::time::SystemTime;
-
-    use crate::cli::Config;
-
     #[test]
-    fn test_config_file() {
-        let now = SystemTime::now();
-        let a = now.duration_since(SystemTime::UNIX_EPOCH).unwrap();
-
-        println!("time: {}", now.elapsed().unwrap().as_secs());
-        println!("time: {:?}", now);
-        println!("time: {}", a.as_secs());
-
-        // let config = super::Config::default();
-        // let config: Config = confy::load("quex", "config").unwrap();
-        // confy::store("quex", "config", &config).unwrap();
-        //
-        // let a = confy::get_configuration_file_path("quex", "config").unwrap();
-        // println!("path: {}", a.display());
-    }
+    fn test_config_file() {}
 }

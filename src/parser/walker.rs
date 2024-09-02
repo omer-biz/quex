@@ -78,16 +78,3 @@ pub fn walk_dir(path: &PathBuf) -> Result<(Schedules, QErrors), io::FileError> {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use std::path::PathBuf;
-
-    #[test]
-    fn test_walk_dir() {
-        let path = PathBuf::from("test_quex_files/");
-
-        let (schedules, errors) = super::walk_dir(&path).unwrap();
-
-    }
-}

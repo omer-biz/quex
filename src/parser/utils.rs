@@ -1,7 +1,5 @@
 use time::error::ComponentRange;
 
-use crate::error;
-
 use super::{time_wrapper, Rule};
 
 pub fn werh_from_quex(as_str: &str) -> zemen::Werh {
