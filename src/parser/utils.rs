@@ -55,31 +55,29 @@ pub fn get_time_description(
                     .chars()
                     .filter(|c| char::is_alphabetic(*c))
                     .collect();
-                let hms = time_pair
+                let hm = time_pair
                     .into_inner()
                     .as_str()
                     .split(':')
                     .collect::<Vec<_>>();
 
-                let mut hour = hms[0].parse().unwrap(); // won't fail
+                let mut hour = hm[0].parse().unwrap(); // won't fail
                 if am_pm == "PM" {
                     hour += 12;
                 }
-                let minute = hms[1].parse().unwrap(); // won't fail
-                let second = hms.get(2).unwrap_or(&"0").parse().unwrap(); // won't fail
+                let minute = hm[1].parse().unwrap(); // won't fail
 
                 time = Some(time_span::TimeSpan::new_unit(time::Time::from_hms(
-                    hour, minute, second,
+                    hour, minute, 0,
                 )?));
             }
             Rule::clock => {
-                let hms = time_pair.as_str().split(':').collect::<Vec<_>>();
-                let hour = hms[0].parse().unwrap(); // won't fail
-                let minute = hms[1].parse().unwrap(); // won't fail
-                let second = hms.get(2).unwrap_or(&"0").parse().unwrap(); // won't fail
+                let hm = time_pair.as_str().split(':').collect::<Vec<_>>();
+                let hour = hm[0].parse().unwrap(); // won't fail
+                let minute = hm[1].parse().unwrap(); // won't fail
 
                 time = Some(time_span::TimeSpan::new_unit(time::Time::from_hms(
-                    hour, minute, second,
+                    hour, minute, 0,
                 )?));
             }
             _ => unreachable!(),

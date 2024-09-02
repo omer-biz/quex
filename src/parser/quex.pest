@@ -55,7 +55,7 @@ ethiopian_date = { (yearly | named_yearly | year) ~ ethiopian_month ~ day }
 
 recurring_monthly = { "d=" ~ ASCII_DIGIT{1, 2} }
 
-clock = { ASCII_DIGIT{1, 2} ~ ":" ~ ASCII_DIGIT{1, 2} ~ ( ":" ~ ASCII_DIGIT{1, 2} )? }
+clock = { ASCII_DIGIT{1, 2} ~ ":" ~ ASCII_DIGIT{1, 2} }
 am_pm = { clock ~ (^"am" | ^"pm") }
 time  = { am_pm | clock }
 
