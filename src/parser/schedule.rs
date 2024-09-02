@@ -3,7 +3,7 @@ use std::fmt;
 use time::Date;
 use zemen::Zemen;
 
-use crate::parser::time_wrapper;
+use crate::parser::time_span;
 
 #[enum_dispatch::enum_dispatch]
 trait DisplayDate {
@@ -45,11 +45,7 @@ impl JulianDayNumber for Calender {
 }
 
 impl Schedule {
-    pub fn new(
-        description: String,
-        date: Calender,
-        time: Option<time_wrapper::TimeWrapper>,
-    ) -> Self {
+    pub fn new(description: String, date: Calender, time: Option<time_span::TimeSpan>) -> Self {
         Schedule {
             description,
             date,
@@ -96,7 +92,7 @@ pub enum Calender {
 pub struct Schedule {
     pub description: String,
     pub date: Calender,
-    pub time: Option<time_wrapper::TimeWrapper>,
+    pub time: Option<time_span::TimeSpan>,
 }
 
 impl fmt::Display for Schedule {

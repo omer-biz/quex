@@ -1,7 +1,7 @@
 pub mod schedule;
 pub mod walker;
 
-mod time_wrapper;
+mod time_span;
 mod utils;
 
 use pest::Parser;

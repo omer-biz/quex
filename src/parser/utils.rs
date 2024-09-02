@@ -1,6 +1,6 @@
 use time::error::ComponentRange;
 
-use super::{time_wrapper, Rule};
+use super::{time_span, Rule};
 
 pub fn werh_from_quex(as_str: &str) -> zemen::Werh {
     match as_str {
@@ -41,9 +41,9 @@ pub fn month_from_quex(month: &str) -> time::Month {
 
 pub fn get_time_description(
     schedule: &mut pest::iterators::Pairs<Rule>,
-) -> Result<(Option<time_wrapper::TimeWrapper>, String), ComponentRange> {
+) -> Result<(Option<time_span::TimeSpan>, String), ComponentRange> {
     let description;
-    let mut time: Option<time_wrapper::TimeWrapper> = None;
+    let mut time: Option<time_span::TimeSpan> = None;
 
     let pos = schedule.next().unwrap();
     if pos.as_rule() == Rule::time {
@@ -68,7 +68,9 @@ pub fn get_time_description(
                 let minute = hms[1].parse().unwrap(); // won't fail
                 let second = hms.get(2).unwrap_or(&"0").parse().unwrap(); // won't fail
 
-                time = Some(time_wrapper::TimeWrapper::from_hms(hour, minute, second)?);
+                time = Some(time_span::TimeSpan::new_unit(time::Time::from_hms(
+                    hour, minute, second,
+                )?));
             }
             Rule::clock => {
                 let hms = time_pair.as_str().split(':').collect::<Vec<_>>();
@@ -76,7 +78,9 @@ pub fn get_time_description(
                 let minute = hms[1].parse().unwrap(); // won't fail
                 let second = hms.get(2).unwrap_or(&"0").parse().unwrap(); // won't fail
 
-                time = Some(time_wrapper::TimeWrapper::from_hms(hour, minute, second)?);
+                time = Some(time_span::TimeSpan::new_unit(time::Time::from_hms(
+                    hour, minute, second,
+                )?));
             }
             _ => unreachable!(),
         }
