@@ -1,9 +1,9 @@
 use std::{path::PathBuf, process::Command};
 
+pub use crate::parser::schedule::JulianDayNumber;
+pub use crate::parser::schedule::Schedule;
 pub use cli::Format;
 pub use parser::walker::{QErrors, Schedules};
-pub use parser::JulianDayNumber;
-pub use parser::Schedule;
 
 pub mod cli;
 mod error;

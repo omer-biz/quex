@@ -59,8 +59,10 @@ clock = { ASCII_DIGIT{1, 2} ~ ":" ~ ASCII_DIGIT{1, 2} ~ ( ":" ~ ASCII_DIGIT{1, 2
 am_pm = { clock ~ (^"am" | ^"pm") }
 time  = { am_pm | clock }
 
+time_range = { time ~ "-" ~ time }
+
 schedule = {
-    (recurring_monthly | gregorian_date | ethiopian_date) ~ time? ~ "," ~ description ~ NEWLINE*
+    (recurring_monthly | gregorian_date | ethiopian_date) ~ (time_range | time)? ~ "," ~ description ~ NEWLINE*
 }
 
 schedule_list = _{ SOI ~ schedule* ~ EOI}
