@@ -107,7 +107,7 @@ fn extract_time(time: &str) -> Result<time::Time, time::error::ComponentRange> {
     let time = time.to_uppercase().replace("AM", "").replace("PM", "");
     let time = time.trim();
 
-    let mut time = time.split(":");
+    let mut time = time.split(':');
 
     let mut h = time.next().unwrap().parse().unwrap();
     let m = time.next().unwrap().parse().unwrap();

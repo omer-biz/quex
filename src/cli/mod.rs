@@ -21,24 +21,25 @@ pub struct Cli {
     #[clap(short, long)]
     pub editor: Option<String>,
 
-    /// How many days into the future the report extends.
-    #[clap(short, long, default_value_t = 14)]
-    pub future: i32,
+    /// How many days into the future the report extends [default: 14]
+    #[clap(short, long)]
+    pub future: Option<i32>,
 
-    /// How many days into the past the report extends.
-    #[clap(short, long, default_value_t = 3)]
-    pub past: i32,
+    /// How many days into the past the report extends [default: 3]
+    #[clap(short, long)]
+    pub past: Option<i32>,
 
     /// Show parsing errors
-    #[clap(long, default_value = "false")]
-    pub errors: bool,
+    #[clap(long)]
+    pub errors: Option<bool>,
 
-    /// Specify the format to use for printing the schedules
-    #[clap(long, default_value_t = Format::Plain, value_enum)]
-    pub format: Format,
+    /// Specify the format to use for printing the schedules [default: plain]
+    #[clap(long, value_enum)]
+    pub format: Option<Format>,
 }
 
-#[derive(Debug, PartialEq, ValueEnum, Clone)]
+#[derive(Debug, PartialEq, ValueEnum, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum Format {
     Json,
     Plain,
@@ -75,6 +76,11 @@ pub enum Command {
 pub struct Config {
     pub calendar: PathBuf,
     pub editor: String,
+    pub future: Option<i32>,
+    pub past: Option<i32>,
+    pub print_errors: Option<bool>,
+    pub format: Option<Format>,
+
 }
 
 impl Default for Config {
@@ -88,6 +94,10 @@ impl Default for Config {
         Self {
             calendar,
             editor: String::from("nvim"),
+            future: None,
+            past: None,
+            print_errors: None,
+            format: None,
         }
     }
 }
