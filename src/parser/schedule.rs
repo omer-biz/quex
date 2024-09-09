@@ -5,10 +5,6 @@ use zemen::Zemen;
 
 use crate::parser::time_span;
 
-#[enum_dispatch::enum_dispatch]
-trait DisplayDate {
-    fn date(&self) -> (i32, String, u8);
-}
 
 pub trait JulianDayNumber {
     fn julian_day(&self) -> i32;
@@ -20,18 +16,6 @@ impl serde::Serialize for Calender {
         S: serde::Serializer,
     {
         self.to_string().serialize(serializer)
-    }
-}
-
-impl DisplayDate for Date {
-    fn date(&self) -> (i32, String, u8) {
-        (self.year(), self.month().to_string(), self.day())
-    }
-}
-
-impl DisplayDate for Zemen {
-    fn date(&self) -> (i32, String, u8) {
-        (self.year(), self.month().to_string(), self.day())
     }
 }
 
@@ -79,11 +63,22 @@ impl fmt::Display for Calender {
     }
 }
 
-#[enum_dispatch::enum_dispatch(DisplayDate)]
 #[derive(Debug, PartialEq)]
 pub enum Calender {
-    Date,
-    Zemen,
+    Date(Date),
+    Zemen(Zemen),
+}
+
+impl From<Zemen> for Calender {
+    fn from(value: zemen::Zemen) -> Self {
+        Calender::Zemen(value)
+    }
+}
+
+impl From<Date> for Calender {
+    fn from(value: Date) -> Self {
+        Calender::Date(value)
+    }
 }
 
 #[derive(Debug, PartialEq, Serialize)]
