@@ -80,7 +80,6 @@ pub struct Config {
     pub past: Option<i32>,
     pub print_errors: Option<bool>,
     pub format: Option<Format>,
-
 }
 
 impl Default for Config {

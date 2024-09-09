@@ -5,7 +5,6 @@ use zemen::Zemen;
 
 use crate::parser::time_span;
 
-
 pub trait JulianDayNumber {
     fn julian_day(&self) -> i32;
 }
@@ -34,6 +33,7 @@ impl Schedule {
             description,
             date,
             time,
+            diff: None,
         }
     }
 }
@@ -42,22 +42,10 @@ impl fmt::Display for Calender {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Calender::Date(d) => {
-                write!(
-                    f,
-                    "{} {} {}",
-                    d.month(),
-                    d.day(),
-                    d.year()
-                )
+                write!(f, "{} {} {}", d.month(), d.day(), d.year())
             }
             Calender::Zemen(d) => {
-                write!(
-                    f,
-                    "{} {} {}",
-                    d.month(),
-                    d.day(),
-                    d.year()
-                )
+                write!(f, "{} {} {}", d.month(), d.day(), d.year())
             }
         }
     }
@@ -86,6 +74,7 @@ pub struct Schedule {
     pub description: String,
     pub date: Calender,
     pub time: Option<time_span::TimeSpan>,
+    pub diff: Option<i32>,
 }
 
 impl fmt::Display for Schedule {

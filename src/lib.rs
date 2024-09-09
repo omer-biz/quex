@@ -7,31 +7,33 @@ pub use parser::walker::{QErrors, Schedules};
 
 pub mod cli;
 mod error;
+pub mod filter;
 mod parser;
 
 pub fn get_schedules(path: PathBuf) -> (Schedules, QErrors) {
     parser::walker::walk_dir(&path).unwrap()
 }
 
-pub fn view_schedules(schedules: Vec<(i32, Schedule)>, format: &Format) {
+pub fn view_schedules(schedules: Schedules, format: &Format) {
     match format {
         Format::Json => {
             let json = serde_json::to_string(&schedules).unwrap();
             println!("{}", json);
         }
-        Format::Plain => schedules.iter().for_each(|(diff, sch)| {
+        Format::Plain => schedules.iter().for_each(|sch| {
             let time = sch
                 .time
                 .as_ref()
                 .map(|t| format!(", {t}"))
-                // .map(|t| t.to_string())
                 .unwrap_or("".to_string());
 
-            match diff {
-                0 => println!("Today{}, {}", time, sch.description),
-                1 => println!("Tomorrow{}, {}", time, sch.description),
-                -1 => println!("Yesterday{}, {}", time, sch.description),
-                _ => println!("{}", sch),
+            if let Some(diff) = sch.diff {
+                match diff {
+                    0 => println!("Today{}, {}", time, sch.description),
+                    1 => println!("Tomorrow{}, {}", time, sch.description),
+                    -1 => println!("Yesterday{}, {}", time, sch.description),
+                    _ => println!("{}", sch),
+                }
             }
         }),
     }

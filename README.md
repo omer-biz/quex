@@ -84,3 +84,14 @@ The calendar can be set to a single file or a directory of markdown files where 
 have a `quex` block.
 
 You will be asked, if the `calendar` directory doesn't exists, if you want to create it.
+
+## Cli Arguments
+
+...snip...
+
+Passing `--future` and `--past` won't take effect if one of the following commands is passed.
+
+- `week`
+- `month`
+- `year`
+- `all`

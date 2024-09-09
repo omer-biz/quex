@@ -1,7 +1,7 @@
 use clap::Parser;
 use quex::{
     cli::{Cli, Command, Config},
-    JulianDayNumber, Schedule, Schedules,
+    filter::{self, FilterOption},
 };
 
 fn main() {
@@ -38,63 +38,16 @@ fn main() {
     // Filtering options
     let (schedules, parse_errors) = quex::get_schedules(quex_path.clone());
 
-    let filter_options =
-        filter_options(command.as_ref()).unwrap_or(FilterOptions::Ranged { future, past });
+    let range_filter = Some(FilterOption::new_ranged(future, past));
+    let command_filter = filter::command_to_filter(command.as_ref()).or(range_filter);
 
-    let schedules = filter_schedules(schedules, filter_options);
+    let pipline = vec![command_filter];
 
+    let schedules = filter::filter_pipline(schedules, pipline);
+
+    // print the schedules
     quex::view_schedules(schedules, &format);
     if errors {
         quex::view_parse_errors(parse_errors, &format);
     }
-}
-
-fn filter_schedules(
-    mut schedules: Schedules,
-    filter_options: FilterOptions,
-) -> Vec<(i32, Schedule)> {
-    let jdn_today = time::OffsetDateTime::now_utc().date().to_julian_day();
-    schedules.sort_by_key(|sch| sch.date.julian_day());
-
-    match filter_options {
-        FilterOptions::Ranged { future, past } => schedules
-            .into_iter()
-            .filter_map(|sch| {
-                let diff = sch.date.julian_day() - jdn_today;
-
-                match diff < future && diff > -past {
-                    true => Some((diff, sch)),
-                    false => None,
-                }
-            })
-            .collect(),
-        FilterOptions::All => schedules
-            .into_iter()
-            .map(|sch| (sch.date.julian_day() - jdn_today, sch))
-            .collect(),
-    }
-}
-
-fn filter_options(command: Option<&Command>) -> Option<FilterOptions> {
-    match command {
-        Some(c) => match c {
-            Command::Week => Some(FilterOptions::Ranged { future: 7, past: 1 }),
-            Command::Month => Some(FilterOptions::Ranged {
-                future: 30,
-                past: 1,
-            }),
-            Command::Year => Some(FilterOptions::Ranged {
-                future: 365,
-                past: 1,
-            }),
-            Command::All => Some(FilterOptions::All),
-            _ => None,
-        },
-        None => None,
-    }
-}
-
-enum FilterOptions {
-    Ranged { future: i32, past: i32 },
-    All,
 }
