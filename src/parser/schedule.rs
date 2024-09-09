@@ -60,8 +60,7 @@ impl fmt::Display for Calender {
             Calender::Date(d) => {
                 write!(
                     f,
-                    "{}, {} {} {}",
-                    d.weekday().to_string().split_at(3).0,
+                    "{} {} {}",
                     d.month(),
                     d.day(),
                     d.year()
@@ -70,8 +69,7 @@ impl fmt::Display for Calender {
             Calender::Zemen(d) => {
                 write!(
                     f,
-                    "{}, {} {} {}",
-                    d.weekday().short_name(),
+                    "{} {} {}",
                     d.month(),
                     d.day(),
                     d.year()
@@ -100,7 +98,7 @@ impl fmt::Display for Schedule {
         let time = self
             .time
             .as_ref()
-            .map(|t| t.to_string())
+            .map(|t| format!("{t}, "))
             .unwrap_or("".to_string());
 
         write!(f, "{}, {}{}", self.date, time, self.description)

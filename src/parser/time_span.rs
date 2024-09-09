@@ -21,18 +21,15 @@ impl serde::Serialize for TimeSpan {
     where
         S: serde::Serializer,
     {
-        match self {
-            TimeSpan::Unit(t) => t.to_string().serialize(serializer),
-            TimeSpan::Range(t1, t2) => format!("{}-{}", t1, t2).serialize(serializer),
-        }
+        self.to_string().serialize(serializer)
     }
 }
 
 impl fmt::Display for TimeSpan {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            TimeSpan::Unit(t) => t.to_string().fmt(f),
-            TimeSpan::Range(t1, t2) => format!("{}-{}", t1, t2).fmt(f),
+            TimeSpan::Unit(t) => format!("{:02}:{:02}", t.hour(), t.minute()).fmt(f),
+            TimeSpan::Range(t1, t2) => format!("{:02}:{:02} - {:02}:{:02}", t1.hour(), t1.minute(), t2.hour(), t1.minute()).fmt(f),
         }
     }
 }
