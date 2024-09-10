@@ -170,6 +170,7 @@ d=5, recurring monthly
                 description: "in ethiopia".to_string(),
                 date: Calender::from(Zemen::from_eth_cal(2016, zemen::Werh::Nehase, 1).unwrap()),
                 time: None,
+                diff: None,
             },
             Schedule {
                 description: "sample description.".to_string(),
@@ -177,6 +178,7 @@ d=5, recurring monthly
                     Date::from_calendar_date(2024, time::Month::March, 1).unwrap(),
                 ),
                 time: None,
+                diff: None,
             },
             Schedule {
                 description: "recurring monthly".to_string(),
@@ -184,6 +186,7 @@ d=5, recurring monthly
                     Date::from_calendar_date(2024, time::Month::July.next(), 5).unwrap(),
                 ),
                 time: None,
+                diff: None,
             },
             Schedule {
                 description: "reacurring yeal: year: 1992 and past_time: 32".to_string(),
@@ -191,6 +194,7 @@ d=5, recurring monthly
                     Date::from_calendar_date(1992, time::Month::February, 29).unwrap(),
                 ),
                 time: None,
+                diff: None,
             },
         ];
 
