@@ -26,6 +26,10 @@ fn filter_schedules(mut schedules: Schedules, filter_options: Option<FilterOptio
                     sch
                 })
                 .collect(),
+            FilterOption::SubStr(sub_str) => schedules
+                .into_iter()
+                .filter(|sch| sch.description.contains(sub_str.as_str()))
+                .collect(),
         }
     } else {
         schedules
@@ -54,11 +58,16 @@ pub fn command_to_filter(command: Option<&Command>) -> Option<FilterOption> {
 pub enum FilterOption {
     Ranged { future: i32, past: i32 },
     All,
+    SubStr(String),
 }
 
 impl FilterOption {
     pub fn new_ranged(future: i32, past: i32) -> Self {
         Self::Ranged { future, past }
+    }
+
+    pub fn new_sub_str(sub_str: String) -> Self {
+        Self::SubStr(sub_str)
     }
 }
 

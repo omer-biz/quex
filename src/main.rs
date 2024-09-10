@@ -14,6 +14,7 @@ fn main() {
         past,
         errors,
         format,
+        filter: filter_str,
     } = Cli::parse();
 
     let app_config: Config = config
@@ -40,8 +41,9 @@ fn main() {
 
     let range_filter = Some(FilterOption::new_ranged(future, past));
     let command_filter = filter::command_to_filter(command.as_ref()).or(range_filter);
+    let sub_str_filter = filter_str.map(FilterOption::new_sub_str);
 
-    let pipline = vec![command_filter];
+    let pipline = vec![command_filter, sub_str_filter];
 
     let schedules = filter::filter_pipline(schedules, pipline);
 

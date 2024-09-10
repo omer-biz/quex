@@ -36,6 +36,10 @@ pub struct Cli {
     /// Specify the format to use for printing the schedules [default: plain]
     #[clap(long, value_enum)]
     pub format: Option<Format>,
+
+    /// Filter using a sub string
+    #[clap(long)]
+    pub filter: Option<String>,
 }
 
 #[derive(Debug, PartialEq, ValueEnum, Clone, Serialize, Deserialize)]
