@@ -1,5 +1,21 @@
 use crate::{cli::Command, JulianDayNumber, Schedules};
 
+pub enum FilterOption {
+    Ranged { future: i32, past: i32 },
+    All,
+    SubStr(String),
+}
+
+impl FilterOption {
+    pub fn new_ranged(future: i32, past: i32) -> Self {
+        Self::Ranged { future, past }
+    }
+
+    pub fn new_sub_str(sub_str: String) -> Self {
+        Self::SubStr(sub_str)
+    }
+}
+
 fn filter_schedules(mut schedules: Schedules, filter_options: Option<FilterOption>) -> Schedules {
     if let Some(filter_options) = filter_options {
         let jdn_today = time::OffsetDateTime::now_utc().date().to_julian_day();
@@ -52,22 +68,6 @@ pub fn command_to_filter(command: Option<&Command>) -> Option<FilterOption> {
             _ => None,
         },
         None => None,
-    }
-}
-
-pub enum FilterOption {
-    Ranged { future: i32, past: i32 },
-    All,
-    SubStr(String),
-}
-
-impl FilterOption {
-    pub fn new_ranged(future: i32, past: i32) -> Self {
-        Self::Ranged { future, past }
-    }
-
-    pub fn new_sub_str(sub_str: String) -> Self {
-        Self::SubStr(sub_str)
     }
 }
 
