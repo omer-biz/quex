@@ -39,9 +39,9 @@ fn main() {
     let command_filter = filter::command_to_filter(command.as_ref()).or(range_filter);
     let sub_str_filter = filter_str.map(FilterOption::new_sub_str);
 
-    let pipline = vec![command_filter, sub_str_filter];
+    let pipeline = vec![command_filter, sub_str_filter];
 
-    let schedules = filter::filter_pipline(schedules, pipline);
+    let schedules = filter::filter_pipeline(schedules, pipeline);
 
     // print the schedules
     quex::view_schedules(schedules, &format);

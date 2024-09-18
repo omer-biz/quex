@@ -71,6 +71,6 @@ pub fn command_to_filter(command: Option<&Command>) -> Option<FilterOption> {
     }
 }
 
-pub fn filter_pipline(schedules: Schedules, pipline: Vec<Option<FilterOption>>) -> Schedules {
-    pipline.into_iter().fold(schedules, filter_schedules)
+pub fn filter_pipeline(schedules: Schedules, pipeline: Vec<Option<FilterOption>>) -> Schedules {
+    pipeline.into_iter().fold(schedules, filter_schedules)
 }
