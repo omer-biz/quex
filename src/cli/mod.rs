@@ -1,4 +1,7 @@
-use std::path::PathBuf;
+use std::{
+    io::{stdin, stdout, Read, Write},
+    path::{Path, PathBuf},
+};
 
 use clap::{Parser, Subcommand, ValueEnum};
 use serde_derive::{Deserialize, Serialize};
@@ -101,6 +104,52 @@ impl Default for Config {
             past: None,
             print_errors: None,
             format: None,
+        }
+    }
+}
+
+pub fn load_create_config(path: Option<impl AsRef<Path>>) -> Result<Config, String> {
+    match path {
+        Some(path) => {
+            if !path.as_ref().exists() {
+                println!("The config path: {:?}, doesn't exist", path.as_ref());
+                print!("Would you like me to create it [y/N]: ");
+                stdout().flush().expect("Something wrong with stdout");
+
+                let confirmation = &mut [0; 1];
+                stdin()
+                    .read_exact(confirmation)
+                    .expect("Can't get handle to stdin");
+
+                if confirmation[0] != 121 {
+                    std::process::exit(-1);
+                }
+            }
+
+            confy::load_path(path.as_ref())
+                .map_err(|_| format!("config file: {:?}", path.as_ref()))
+        }
+        None => {
+            let config_path = confy::get_configuration_file_path("quex", "config")
+                .expect("Error finding config directory");
+
+            if !config_path.exists() {
+                println!("The config path: {config_path:?}, doesn't exist");
+                print!("Would you like me to create it [y/N]: ");
+                stdout().flush().expect("Something wrong with stdout");
+
+                let confirmation = &mut [0; 1];
+                stdin()
+                    .read_exact(confirmation)
+                    .expect("Can't get handle to stdin");
+
+                if confirmation[0] != 121 {
+                    std::process::exit(-1);
+                }
+            }
+
+            confy::load("quex", "config")
+                .map_err(|_| format!("config file: {:?}", config_path))
         }
     }
 }

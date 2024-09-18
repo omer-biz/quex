@@ -1,6 +1,6 @@
 use clap::Parser;
 use quex::{
-    cli::{Cli, Command, Config},
+    cli::{self, Cli, Command},
     filter::{self, FilterOption},
 };
 
@@ -17,11 +17,7 @@ fn main() {
         filter: filter_str,
     } = Cli::parse();
 
-    let app_config: Config = config
-        .as_ref()
-        .map(confy::load_path)
-        .unwrap_or(confy::load("quex", "config"))
-        .expect("can't open config file");
+    let app_config = cli::load_create_config(config).expect("Error loading config file");
 
     let quex_path = quex.unwrap_or(app_config.calendar);
     let editor = editor.unwrap_or(std::env::var("EDITOR").unwrap_or(app_config.editor));
