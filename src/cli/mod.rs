@@ -126,8 +126,7 @@ pub fn load_create_config(path: Option<impl AsRef<Path>>) -> Result<Config, Stri
                 }
             }
 
-            confy::load_path(path.as_ref())
-                .map_err(|_| format!("config file: {:?}", path.as_ref()))
+            confy::load_path(path.as_ref()).map_err(|_| format!("config file: {:?}", path.as_ref()))
         }
         None => {
             let config_path = confy::get_configuration_file_path("quex", "config")
@@ -148,8 +147,7 @@ pub fn load_create_config(path: Option<impl AsRef<Path>>) -> Result<Config, Stri
                 }
             }
 
-            confy::load("quex", "config")
-                .map_err(|_| format!("config file: {:?}", config_path))
+            confy::load("quex", "config").map_err(|_| format!("config file: {:?}", config_path))
         }
     }
 }

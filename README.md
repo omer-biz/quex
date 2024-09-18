@@ -89,7 +89,7 @@ You will be asked, if the `calendar` directory doesn't exists, if you want to cr
 
 ...snip...
 
-Passing `--future` and `--past` won't take effect if one of the following commands is passed.
+Passing `--future` and `--past` won't take effect if one of the following commands are passed.
 
 - `week`
 - `month`

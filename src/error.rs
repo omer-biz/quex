@@ -30,8 +30,13 @@ impl Error {
 
 #[derive(thiserror::Error, Debug)]
 pub enum ValueError {
+    #[cfg(feature = "eth")]
     #[error(transparent)]
     Zemen(#[from] zemen::error::Error),
+
+    #[cfg(not(feature = "eth"))]
+    #[error("feature `eth` is not enabled")]
+    EthNotEnabled,
 
     #[error(transparent)]
     Date(#[from] time::error::ComponentRange),
@@ -52,7 +57,12 @@ impl serde::Serialize for ValueError {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let msg = match &self.kind {
+            #[cfg(feature = "eth")]
             ValueError::Zemen(_) => "invalid ethiopian date",
+
+            #[cfg(not(feature = "eth"))]
+            ValueError::EthNotEnabled => "feature `eth` is not enabled",
+
             ValueError::Date(_) => "invalid gregorian date",
             ValueError::Parse(msg) => msg.as_str(),
         };

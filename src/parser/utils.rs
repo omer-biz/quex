@@ -2,43 +2,6 @@ use time::error::ComponentRange;
 
 pub use super::{time_span::TimeSpan, Rule};
 
-pub fn werh_from_quex(as_str: &str) -> zemen::Werh {
-    match as_str {
-        "mes" | "መስከ" => zemen::Werh::Meskerem,
-        "tik" | "ጥቅም" => zemen::Werh::Tikimit,
-        "hed" | "ህዳር" => zemen::Werh::Hedar,
-        "tah" | "ታኅሣ" => zemen::Werh::Tahasass,
-        "tir" | "ጥር" => zemen::Werh::Tir,
-        "yek" | "የካቲ" => zemen::Werh::Yekatit,
-        "meg" | "መጋቢ" => zemen::Werh::Megabit,
-        "miy" | "ሚያዝ" => zemen::Werh::Miyazia,
-        "gin" | "ግንቦ" => zemen::Werh::Ginbot,
-        "sen" | "ሴኒ" => zemen::Werh::Sene,
-        "ham" | "ሐምሌ" => zemen::Werh::Hamle,
-        "neh" | "ነሐሴ" => zemen::Werh::Nehase,
-        "pua" | "ጳጉሜ" => zemen::Werh::Puagme,
-        _ => unreachable!(),
-    }
-}
-
-pub fn month_from_quex(month: &str) -> time::Month {
-    match month {
-        "jan" => time::Month::January,
-        "feb" => time::Month::February,
-        "mar" => time::Month::March,
-        "apr" => time::Month::April,
-        "may" => time::Month::May,
-        "jun" => time::Month::June,
-        "jul" => time::Month::July,
-        "aug" => time::Month::August,
-        "sep" => time::Month::September,
-        "oct" => time::Month::October,
-        "nov" => time::Month::November,
-        "dec" => time::Month::December,
-        _ => unreachable!(),
-    }
-}
-
 pub fn get_time_description(
     schedule: &mut pest::iterators::Pairs<Rule>,
 ) -> Result<(Option<TimeSpan>, String), ComponentRange> {

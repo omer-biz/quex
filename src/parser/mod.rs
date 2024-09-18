@@ -6,11 +6,14 @@ mod utils;
 
 use pest::Parser;
 use pest_derive::Parser;
-use zemen::Zemen;
 
+use crate::calender;
+use crate::calender::Calender;
 use crate::error::{self, Result};
-use crate::parser::schedule::Calender;
 use crate::Schedule;
+
+#[cfg(feature = "eth")]
+use crate::calender::eth;
 
 #[derive(Parser)]
 #[grammar = "parser/quex.pest"]
@@ -71,7 +74,7 @@ fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
                             year
                         })
                         .unwrap_or(today.year()),
-                    utils::month_from_quex(month.as_str()),
+                    calender::month_from_quex(month.as_str()),
                     day.as_str().parse().unwrap(),
                 )
                 .map_err(error::invalid_format(loc, schedule_line))?;
@@ -110,36 +113,26 @@ fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
             // make a generic error that has the line, line number, and column number,
             // when errors happen on converting dates.
             Rule::ethiopian_date => {
-                let mut ethiopian_date = date.into_inner();
+                #[cfg(feature = "eth")]
+                {
+                    let ethiopian_date = date.into_inner();
+                    let (schedule_date, description) =
+                        eth::parse_eth_date(ethiopian_date, description);
+                    let schedule_date =
+                        schedule_date.map_err(error::invalid_format(loc, schedule_line))?;
 
-                let year = ethiopian_date.next().unwrap(); // won't fail
-                let mut year_str = year.as_str();
-
-                if year.as_rule() == Rule::named_yearly {
-                    let today = Zemen::today();
-                    year_str = year.as_str().strip_suffix('*').unwrap(); // won't fail
-                    let years_past = today.year() - year_str.parse::<i32>().unwrap(); // won't fail
-
-                    description = description
-                        .replace("\\y", year_str)
-                        .replace("\\a", &years_past.to_string());
+                    schedules.push(Schedule::new(
+                        description,
+                        Calender::from(schedule_date),
+                        time,
+                    ));
                 }
-
-                let month = ethiopian_date.next().unwrap(); // won't fail
-                let day = ethiopian_date.next().unwrap(); // won't fail
-
-                let schedule_date = Zemen::from_eth_cal(
-                    year_str.parse().unwrap(),
-                    utils::werh_from_quex(month.as_str()),
-                    day.as_str().parse().unwrap(),
-                )
-                .map_err(error::invalid_format(loc, schedule_line))?;
-
-                schedules.push(Schedule::new(
-                    description,
-                    Calender::from(schedule_date),
-                    time,
-                ));
+                #[cfg(not(feature = "eth"))]
+                {
+                    return Err(error::invalid_format(loc, schedule_line)(
+                        error::ValueError::EthNotEnabled,
+                    ));
+                }
             }
             _ => unreachable!(),
         }

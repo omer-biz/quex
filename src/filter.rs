@@ -1,4 +1,4 @@
-use crate::{cli::Command, JulianDayNumber, Schedules};
+use crate::{cli::Command, Schedules};
 
 pub enum FilterOption {
     Ranged { future: i32, past: i32 },
