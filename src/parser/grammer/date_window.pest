@@ -1,0 +1,12 @@
+
+
+month = ${ ASCII_DIGIT{1, 2} }
+
+begin = { year? ~ delim ~ (gregorian_month | month) ~ delim ~ day }
+end   = { year? ~ delim ~ (gregorian_month | month) ~ delim ~ day }
+
+range_delimiter = _{ "-" | "," }
+delim           = _{ ("-" | ":")? }
+
+eoi = _{ !ANY }
+date_window = { SOI ~ begin ~ (range_delimiter ~ end)? ~ eoi }

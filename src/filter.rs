@@ -1,9 +1,10 @@
-use crate::{cli::Command, Schedules};
+pub(crate) use crate::{cli::Command, parser::date_window::DateWindow, Schedules};
 
 pub enum FilterOption {
     Ranged { future: i32, past: i32 },
     All,
     SubStr(String),
+    DateWinodw(DateWindow),
 }
 
 impl FilterOption {
@@ -13,6 +14,9 @@ impl FilterOption {
 
     pub fn new_sub_str(sub_str: String) -> Self {
         Self::SubStr(sub_str)
+    }
+    pub fn date_window(dw: DateWindow) -> Self {
+        Self::DateWinodw(dw)
     }
 }
 
@@ -46,6 +50,15 @@ fn filter_schedules(mut schedules: Schedules, filter_options: Option<FilterOptio
                 .into_iter()
                 .filter(|sch| sch.description.contains(sub_str.as_str()))
                 .collect(),
+
+            FilterOption::DateWinodw(DateWindow { begin, end }) => {
+                let end = end.unwrap_or(jdn_today);
+
+                schedules
+                    .into_iter()
+                    .filter(|sch| sch.date.julian_day() >= begin && sch.date.julian_day() <= end)
+                    .collect()
+            }
         }
     } else {
         schedules

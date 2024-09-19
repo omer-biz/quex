@@ -6,6 +6,8 @@ use std::{
 use clap::{Parser, Subcommand, ValueEnum};
 use serde_derive::{Deserialize, Serialize};
 
+use crate::filter::DateWindow;
+
 #[derive(Parser, Debug)]
 pub struct Cli {
     /// Subcommands
@@ -43,6 +45,10 @@ pub struct Cli {
     /// Filter using a sub string
     #[clap(long)]
     pub filter: Option<String>,
+
+    /// Filter by window of time
+    #[clap(long)]
+    pub date_window: Option<DateWindow>,
 }
 
 #[derive(Debug, PartialEq, ValueEnum, Clone, Serialize, Deserialize)]

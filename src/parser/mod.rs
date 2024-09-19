@@ -1,3 +1,4 @@
+pub mod date_window;
 pub mod schedule;
 pub mod walker;
 
@@ -16,7 +17,7 @@ use crate::Schedule;
 use crate::calender::eth;
 
 #[derive(Parser)]
-#[grammar = "parser/quex.pest"]
+#[grammar = "parser/grammer/quex.pest"]
 pub struct QuexParser;
 
 fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
