@@ -102,7 +102,43 @@ fn rule_to_jdn(rule: pest::iterators::Pairs<Rule>) -> Result<i32, DateWindowErro
 
 #[cfg(test)]
 mod test {
+    use std::str::FromStr;
+
+    use super::DateWindow;
+
 
     #[test]
-    fn test_full_field() {}
+    fn absolute_snippets() {
+        let snippets = [
+            "2002:jan:1",
+            "2002:2:2,2003:1:1",
+        ];
+
+        let half_open = DateWindow::from_str(snippets[0]).unwrap();
+        assert_eq!(half_open.end, None);
+        assert_eq!(half_open.begin, 2452276);
+
+        let closed = DateWindow::from_str(snippets[1]).unwrap();
+        assert_eq!(closed.begin, 2452308);
+        assert_eq!(closed.end, Some(2452641));
+
+    }
+
+    #[test]
+    fn relative_snippets() {
+        let snippets = [
+            "jan:1,feb:1",
+            "jan:1",
+        ];
+
+        let this_year = time::OffsetDateTime::now_utc().year();
+
+        let closed = DateWindow::from_str(snippets[0]).unwrap();
+        assert_eq!(closed.begin, time::Date::from_calendar_date(this_year, time::Month::January, 1).unwrap().to_julian_day());
+        assert_eq!(closed.end, Some(time::Date::from_calendar_date(this_year, time::Month::February, 1).unwrap().to_julian_day()));
+
+        let half_open = DateWindow::from_str(snippets[1]).unwrap();
+        assert_eq!(half_open.begin,time::Date::from_calendar_date(this_year, time::Month::January, 1).unwrap().to_julian_day());
+        assert_eq!(half_open.end, None);
+    }
 }
