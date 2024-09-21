@@ -14,7 +14,7 @@ pub struct DateRangeParser;
 #[derive(Clone, Debug)]
 pub struct DateWindow {
     pub begin: i32,
-    pub end: Option<i32>,
+    pub end: i32,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -62,7 +62,13 @@ impl FromStr for DateWindow {
             .next()
             .map(|r| r.into_inner())
             .map(rule_to_jdn)
-            .transpose()?;
+            .transpose()?
+        .unwrap_or_else(|| time::OffsetDateTime::now_utc().to_julian_day());
+
+        if begin > end {
+            return Err(DateWindowError::InvalidDate("begin can not be greater than end".to_string()));
+        }
+
 
         Ok(DateWindow { begin, end })
     }
@@ -114,13 +120,16 @@ mod test {
             "2002:2:2,2003:1:1",
         ];
 
+
+        let today = time::OffsetDateTime::now_utc();
+
         let half_open = DateWindow::from_str(snippets[0]).unwrap();
-        assert_eq!(half_open.end, None);
+        assert_eq!(half_open.end, today.to_julian_day());
         assert_eq!(half_open.begin, 2452276);
 
         let closed = DateWindow::from_str(snippets[1]).unwrap();
         assert_eq!(closed.begin, 2452308);
-        assert_eq!(closed.end, Some(2452641));
+        assert_eq!(closed.end, 2452641);
 
     }
 
@@ -131,14 +140,15 @@ mod test {
             "jan:1",
         ];
 
-        let this_year = time::OffsetDateTime::now_utc().year();
+        let today = time::OffsetDateTime::now_utc();
+        let this_year = today.year();
 
         let closed = DateWindow::from_str(snippets[0]).unwrap();
         assert_eq!(closed.begin, time::Date::from_calendar_date(this_year, time::Month::January, 1).unwrap().to_julian_day());
-        assert_eq!(closed.end, Some(time::Date::from_calendar_date(this_year, time::Month::February, 1).unwrap().to_julian_day()));
+        assert_eq!(closed.end, time::Date::from_calendar_date(this_year, time::Month::February, 1).unwrap().to_julian_day());
 
         let half_open = DateWindow::from_str(snippets[1]).unwrap();
         assert_eq!(half_open.begin,time::Date::from_calendar_date(this_year, time::Month::January, 1).unwrap().to_julian_day());
-        assert_eq!(half_open.end, None);
+        assert_eq!(half_open.end, today.to_julian_day());
     }
 }

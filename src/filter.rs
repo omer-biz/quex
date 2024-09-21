@@ -52,8 +52,6 @@ fn filter_schedules(mut schedules: Schedules, filter_options: Option<FilterOptio
                 .collect(),
 
             FilterOption::DateWinodw(DateWindow { begin, end }) => {
-                let end = end.unwrap_or(jdn_today);
-
                 schedules
                     .into_iter()
                     .filter(|sch| sch.date.julian_day() >= begin && sch.date.julian_day() <= end)
