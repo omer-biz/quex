@@ -146,28 +146,29 @@ fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
 
 #[cfg(test)]
 mod tests {
+    use super::Calender;
+    use super::Schedule;
+    use time::Date;
+
+    #[cfg(feature = "eth")]
+    use zemen::Zemen;
 
     #[test]
     fn test_parse_quex() {
-        use super::Calender;
-        use super::Schedule;
-        use time::Date;
-        use zemen::Zemen;
-
-        time::Date::from_calendar_date(2024, time::Month::March, 1).unwrap();
-
-        let input = r#"2016 neh 1, in ethiopia
-2024 mar 1, sample description.
+        let input = r#"2024 mar 1, sample description.
 d=5, recurring monthly
-1992* feb 29, reacurring yeal: year: \y and past_time: \a"#;
+1992* feb 29, reacurring yeal: year: \y and past_time: \a
+"#;
+
+        let today = time::OffsetDateTime::now_utc();
+
+        let month = if today.day() > 5 {
+            today.month().next()
+        } else {
+            today.month()
+        };
 
         let output = vec![
-            super::Schedule {
-                description: "in ethiopia".to_string(),
-                date: Calender::from(Zemen::from_eth_cal(2016, zemen::Werh::Nehase, 1).unwrap()),
-                time: None,
-                diff: None,
-            },
             Schedule {
                 description: "sample description.".to_string(),
                 date: Calender::from(
@@ -178,16 +179,44 @@ d=5, recurring monthly
             },
             Schedule {
                 description: "recurring monthly".to_string(),
-                date: Calender::from(
-                    Date::from_calendar_date(2024, time::Month::July.next(), 5).unwrap(),
-                ),
+                date: Calender::from(Date::from_calendar_date(today.year(), month, 5).unwrap()),
                 time: None,
                 diff: None,
             },
             Schedule {
                 description: "reacurring yeal: year: 1992 and past_time: 32".to_string(),
                 date: Calender::from(
-                    Date::from_calendar_date(1992, time::Month::February, 29).unwrap(),
+                    Date::from_calendar_date(today.year(), time::Month::February, 29).unwrap(),
+                ),
+                time: None,
+                diff: None,
+            },
+        ];
+
+        let schedules = super::parse_quex(input).unwrap();
+        assert_eq!(schedules, output);
+    }
+
+    #[test]
+    #[cfg(feature = "eth")]
+    fn test_parse_eth() {
+        let input = r#"2016 neh 1, in ethiopia
+2015* mes 1, another eth  this \y and this \a
+"#;
+
+        let today = Zemen::today();
+
+        let output = vec![
+            super::Schedule {
+                description: "in ethiopia".to_string(),
+                date: Calender::from(Zemen::from_eth_cal(2016, zemen::Werh::Nehase, 1).unwrap()),
+                time: None,
+                diff: None,
+            },
+            super::Schedule {
+                description: "another eth  this 2015 and this 2".to_string(),
+                date: Calender::from(
+                    Zemen::from_eth_cal(today.year(), zemen::Werh::Meskerem, 1).unwrap(),
                 ),
                 time: None,
                 diff: None,

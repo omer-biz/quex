@@ -41,9 +41,10 @@ pub fn parse_eth_date(
 ) -> (Result<Zemen, zemen::error::Error>, String) {
     let year = ethiopian_date.next().unwrap(); // won't fail
     let mut year_str = year.as_str();
+    let is_named_year = year.as_rule() == Rule::named_yearly;
+    let today = Zemen::today();
 
-    if year.as_rule() == Rule::named_yearly {
-        let today = Zemen::today();
+    if is_named_year {
         year_str = year.as_str().strip_suffix('*').unwrap(); // won't fail
         let years_past = today.year() - year_str.parse::<i32>().unwrap(); // won't fail
 
@@ -57,10 +58,23 @@ pub fn parse_eth_date(
 
     (
         Zemen::from_eth_cal(
-            year_str.parse().unwrap(),
+            year_str
+                .parse()
+                .map(|year| {
+                    // helpful when printing all the past schedules.
+                    // It won't replace their years with the current year.
+                    if year < today.year() && is_named_year {
+                        return today.year();
+                    }
+                    year
+                })
+                .unwrap_or(today.year()),
             werh_from_quex(month.as_str()),
             day.as_str().parse().unwrap(),
         ),
         description,
     )
+
+
+
 }
