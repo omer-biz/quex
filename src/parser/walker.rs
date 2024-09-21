@@ -13,16 +13,25 @@ use crate::{
 pub type Schedules = Vec<Schedule>;
 pub type QErrors = Vec<Error>;
 
-pub fn walk_dir(path: &PathBuf) -> Result<(Schedules, QErrors), io::FileError> {
+pub fn walk_dir(path: PathBuf) -> Result<(Schedules, QErrors), io::FileError> {
     if path.is_dir() {
         let mut schedules: Schedules = vec![];
         let mut errors = vec![];
 
+        let entries = match path.read_dir() {
+            Ok(entries) => entries,
+            Err(e) => return Err(io::FileError::new(path, e)),
+        };
+
         // generic io failure
-        for entry in path.read_dir().map_err(|e| io::FileError::new(path.clone(), e))? {
+        for entry in entries {
             // generic io failure
-            let ent = entry.map_err(|e| io::FileError::new(path.clone(), e))?.path();
-            let (schs, errs) = walk_dir(&ent)?;
+            let ent = match entry {
+                Ok(e) => e.path(),
+                Err(e) => return Err(io::FileError::new(path, e)),
+            };
+
+            let (schs, errs) = walk_dir(ent)?;
 
             schedules.extend(schs);
             errors.extend(errs);
@@ -34,8 +43,10 @@ pub fn walk_dir(path: &PathBuf) -> Result<(Schedules, QErrors), io::FileError> {
             return Ok((vec![], vec![]));
         };
 
-        let file = File::open(path).map_err(|e| io::FileError::new(path.clone(), e))?; // unable to open file
-
+        let file = match File::open(&path) {
+            Ok(file) => file,
+            Err(e) => return Err(io::FileError::new(path, e)),
+        };
 
         let mut raw_quex = String::new();
         let reader = BufReader::new(file);
@@ -47,11 +58,17 @@ pub fn walk_dir(path: &PathBuf) -> Result<(Schedules, QErrors), io::FileError> {
             let Some((line_num, line)) = line_iter.next() else {
                 break Ok((schedules, errors));
             };
-            let line = line.map_err(|e| io::FileError::new(path.clone(), e))?; // file read error ? maybe generic
+            let line = match line {
+                Ok(line) => line,
+                Err(e) => return Err(io::FileError::new(path, e)),
+            }; // file read error ? maybe generic
 
             if line == "```quex" {
                 for (_, line) in line_iter.by_ref() {
-                    let mut line = line.map_err(|e| io::FileError::new(path.clone(), e))?; // file read error ? maybe generic
+                    let mut line = match line {
+                        Ok(line) => line,
+                        Err(e) => return Err(io::FileError::new(path, e)),
+                    }; // file read error ? maybe generic
 
                     // TODO: what if there was EOF before the end of the `quex` block?
                     if line == "```" {
@@ -71,7 +88,7 @@ pub fn walk_dir(path: &PathBuf) -> Result<(Schedules, QErrors), io::FileError> {
                 let schedule = super::parse_quex(&raw_quex);
                 match schedule {
                     Ok(schedule) => schedules.extend(schedule),
-                    Err(e) => errors.push(e.with_path(path).add_line(line_num + 1)),
+                    Err(e) => errors.push(e.with_path(&path).add_line(line_num + 1)),
                 }
 
                 raw_quex.clear();

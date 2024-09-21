@@ -35,8 +35,10 @@ fn parse_quex(raw_quex: &str) -> Result<Vec<Schedule>> {
             continue;
         };
 
-        let (time, mut description) = utils::get_time_description(&mut schedule)
-            .map_err(error::invalid_format(loc, schedule_line.clone()))?;
+        let (time, mut description) = match utils::get_time_description(&mut schedule) {
+            Ok(t) => t,
+            Err(e) => return Err(error::invalid_format(loc, schedule_line)(e)),
+        };
 
         match date.as_rule() {
             Rule::gregorian_date => {

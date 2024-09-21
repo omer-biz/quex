@@ -1,4 +1,7 @@
-use std::{path::{Path, PathBuf}, process::Command};
+use std::{
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 pub use crate::parser::schedule::Schedule;
 pub use cli::Format;
@@ -12,7 +15,7 @@ mod parser;
 pub mod calender;
 
 pub fn get_schedules(path: PathBuf) -> (Schedules, QErrors) {
-    parser::walker::walk_dir(&path).unwrap()
+    parser::walker::walk_dir(path).unwrap()
 }
 
 pub fn view_schedules(schedules: Schedules, format: &Format) {
