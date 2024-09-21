@@ -1,4 +1,4 @@
-use std::{path::PathBuf, process::Command};
+use std::{path::{Path, PathBuf}, process::Command};
 
 pub use crate::parser::schedule::Schedule;
 pub use cli::Format;
@@ -50,6 +50,6 @@ pub fn view_parse_errors(errors: QErrors, format: &Format) {
     }
 }
 
-pub fn edit_schedules(path: PathBuf, editor: String) {
+pub fn edit_schedules(path: &Path, editor: String) {
     Command::new(editor).arg(path).status().unwrap();
 }

@@ -132,8 +132,8 @@ pub mod io {
     }
 
     impl FileError {
-        pub fn new(file: PathBuf) -> impl FnOnce(std::io::Error) -> Self {
-            |source| FileError { source, file }
+        pub fn new(file: PathBuf, source: std::io::Error) -> Self {
+            FileError { source, file }
         }
     }
 

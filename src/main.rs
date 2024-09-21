@@ -30,11 +30,11 @@ fn main() {
 
     // Commands
     if let Some(Command::Edit) = &command {
-        quex::edit_schedules(quex_path.clone(), editor);
+        quex::edit_schedules(quex_path.as_path(), editor);
     }
 
     // Filtering options
-    let (schedules, parse_errors) = quex::get_schedules(quex_path.clone());
+    let (schedules, parse_errors) = quex::get_schedules(quex_path);
 
     let date_winodw_filter = date_window.map(FilterOption::date_window);
     let range_filter = Some(FilterOption::new_ranged(future, past));

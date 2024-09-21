@@ -19,9 +19,9 @@ pub fn walk_dir(path: &PathBuf) -> Result<(Schedules, QErrors), io::FileError> {
         let mut errors = vec![];
 
         // generic io failure
-        for entry in path.read_dir().map_err(io::FileError::new(path.clone()))? {
+        for entry in path.read_dir().map_err(|e| io::FileError::new(path.clone(), e))? {
             // generic io failure
-            let ent = entry.map_err(io::FileError::new(path.clone()))?.path();
+            let ent = entry.map_err(|e| io::FileError::new(path.clone(), e))?.path();
             let (schs, errs) = walk_dir(&ent)?;
 
             schedules.extend(schs);
@@ -34,7 +34,8 @@ pub fn walk_dir(path: &PathBuf) -> Result<(Schedules, QErrors), io::FileError> {
             return Ok((vec![], vec![]));
         };
 
-        let file = File::open(path).map_err(io::FileError::new(path.clone()))?; // unable to open file
+        let file = File::open(path).map_err(|e| io::FileError::new(path.clone(), e))?; // unable to open file
+
 
         let mut raw_quex = String::new();
         let reader = BufReader::new(file);
@@ -46,11 +47,11 @@ pub fn walk_dir(path: &PathBuf) -> Result<(Schedules, QErrors), io::FileError> {
             let Some((line_num, line)) = line_iter.next() else {
                 break Ok((schedules, errors));
             };
-            let line = line.map_err(io::FileError::new(path.clone()))?; // file read error ? maybe generic
+            let line = line.map_err(|e| io::FileError::new(path.clone(), e))?; // file read error ? maybe generic
 
             if line == "```quex" {
                 for (_, line) in line_iter.by_ref() {
-                    let mut line = line.map_err(io::FileError::new(path.clone()))?; // file read error ? maybe generic
+                    let mut line = line.map_err(|e| io::FileError::new(path.clone(), e))?; // file read error ? maybe generic
 
                     // TODO: what if there was EOF before the end of the `quex` block?
                     if line == "```" {
