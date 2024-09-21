@@ -45,10 +45,10 @@ ethiopian_month = {
   | "ጳጉሜ"
 }
 
-day            = ${ ASCII_DIGIT{1, 2} }
-year           = { ASCII_DIGIT{1, 4} }
-named_yearly   = { ASCII_DIGIT{1, 4} ~ "*" }
-yearly         = { "*" }
+day          = ${ ASCII_DIGIT{1, 2} }
+year         =  { ASCII_DIGIT{1, 4} }
+named_yearly =  { ASCII_DIGIT{1, 4} ~ "*" }
+yearly       =  { "*" }
 
 gregorian_date = { (yearly | named_yearly | year) ~ gregorian_month ~ day }
 ethiopian_date = { (yearly | named_yearly | year) ~ ethiopian_month ~ day }
@@ -65,4 +65,4 @@ schedule = {
     (recurring_monthly | gregorian_date | ethiopian_date) ~ (time_range | time)? ~ "," ~ description ~ NEWLINE*
 }
 
-schedule_list = _{ SOI ~ schedule* ~ EOI}
+schedule_list = _{ SOI ~ NEWLINE* ~ schedule* ~ EOI }

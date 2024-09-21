@@ -51,12 +51,10 @@ fn filter_schedules(mut schedules: Schedules, filter_options: Option<FilterOptio
                 .filter(|sch| sch.description.contains(sub_str.as_str()))
                 .collect(),
 
-            FilterOption::DateWinodw(DateWindow { begin, end }) => {
-                schedules
-                    .into_iter()
-                    .filter(|sch| sch.date.julian_day() >= begin && sch.date.julian_day() <= end)
-                    .collect()
-            }
+            FilterOption::DateWinodw(DateWindow { begin, end }) => schedules
+                .into_iter()
+                .filter(|sch| sch.date.julian_day() >= begin && sch.date.julian_day() <= end)
+                .collect(),
         }
     } else {
         schedules

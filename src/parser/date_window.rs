@@ -63,12 +63,13 @@ impl FromStr for DateWindow {
             .map(|r| r.into_inner())
             .map(rule_to_jdn)
             .transpose()?
-        .unwrap_or_else(|| time::OffsetDateTime::now_utc().to_julian_day());
+            .unwrap_or_else(|| time::OffsetDateTime::now_utc().to_julian_day());
 
         if begin > end {
-            return Err(DateWindowError::InvalidDate("begin can not be greater than end".to_string()));
+            return Err(DateWindowError::InvalidDate(
+                "begin can not be greater than end".to_string(),
+            ));
         }
-
 
         Ok(DateWindow { begin, end })
     }
@@ -112,14 +113,9 @@ mod test {
 
     use super::DateWindow;
 
-
     #[test]
     fn absolute_snippets() {
-        let snippets = [
-            "2002:jan:1",
-            "2002:2:2,2003:1:1",
-        ];
-
+        let snippets = ["2002:jan:1", "2002:2:2,2003:1:1"];
 
         let today = time::OffsetDateTime::now_utc();
 
@@ -130,25 +126,36 @@ mod test {
         let closed = DateWindow::from_str(snippets[1]).unwrap();
         assert_eq!(closed.begin, 2452308);
         assert_eq!(closed.end, 2452641);
-
     }
 
     #[test]
     fn relative_snippets() {
-        let snippets = [
-            "jan:1,feb:1",
-            "jan:1",
-        ];
+        let snippets = ["jan:1,feb:1", "jan:1"];
 
         let today = time::OffsetDateTime::now_utc();
         let this_year = today.year();
 
         let closed = DateWindow::from_str(snippets[0]).unwrap();
-        assert_eq!(closed.begin, time::Date::from_calendar_date(this_year, time::Month::January, 1).unwrap().to_julian_day());
-        assert_eq!(closed.end, time::Date::from_calendar_date(this_year, time::Month::February, 1).unwrap().to_julian_day());
+        assert_eq!(
+            closed.begin,
+            time::Date::from_calendar_date(this_year, time::Month::January, 1)
+                .unwrap()
+                .to_julian_day()
+        );
+        assert_eq!(
+            closed.end,
+            time::Date::from_calendar_date(this_year, time::Month::February, 1)
+                .unwrap()
+                .to_julian_day()
+        );
 
         let half_open = DateWindow::from_str(snippets[1]).unwrap();
-        assert_eq!(half_open.begin,time::Date::from_calendar_date(this_year, time::Month::January, 1).unwrap().to_julian_day());
+        assert_eq!(
+            half_open.begin,
+            time::Date::from_calendar_date(this_year, time::Month::January, 1)
+                .unwrap()
+                .to_julian_day()
+        );
         assert_eq!(half_open.end, today.to_julian_day());
     }
 }
