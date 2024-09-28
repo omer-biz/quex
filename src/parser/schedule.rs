@@ -1,26 +1,33 @@
 use serde_derive::Serialize;
 use std::fmt;
 
-use crate::calender::Calender;
+use crate::calender::{DateInfo, Event};
 use crate::parser::time_span;
-
-impl Schedule {
-    pub fn new(description: String, date: Calender, time: Option<time_span::TimeSpan>) -> Self {
-        Schedule {
-            description,
-            date,
-            time,
-            diff: None,
-        }
-    }
-}
 
 #[derive(Debug, PartialEq, Serialize)]
 pub struct Schedule {
     pub description: String,
-    pub date: Calender,
+    #[serde(skip_serializing)]
+    pub julian_day_number: i32,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub time: Option<time_span::TimeSpan>,
-    pub diff: Option<i32>,
+    pub diff: i32,
+    pub date: String,
+}
+
+impl<T: DateInfo> From<Event<T>> for Schedule {
+    fn from(event: Event<T>) -> Self {
+        let today = time::OffsetDateTime::now_utc();
+        let date = event.date.julian_day();
+
+        Self {
+            description: event.message,
+            julian_day_number: date,
+            time: None,
+            diff: date - today.to_julian_day(),
+            date: event.date.pretty_print(),
+        }
+    }
 }
 
 impl fmt::Display for Schedule {

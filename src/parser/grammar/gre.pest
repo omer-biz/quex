@@ -1,0 +1,22 @@
+gregorian_month = {
+    "jan"
+  | "feb"
+  | "mar"
+  | "apr"
+  | "may"
+  | "jun"
+  | "jul"
+  | "aug"
+  | "sep"
+  | "oct"
+  | "nov"
+  | "dec"
+}
+
+gregorian_date = { gregorian_month ~ day ~ (yearly | named_yearly | year) }
+month_sym = _{ "d" ~ "=" }
+recurring_monthly = { month_sym ~ day }
+
+schedule = {
+    (recurring_monthly | gregorian_date) ~ (time_range | time)? ~ "," ~ message ~ NEWLINE*
+}

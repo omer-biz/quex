@@ -4,11 +4,11 @@ use std::str::FromStr;
 use pest::Parser;
 use pest_derive::Parser;
 
-use crate::calender;
+use crate::calender::gre;
 
 #[derive(Parser)]
-#[grammar = "parser/grammer/quex.pest"]
-#[grammar = "parser/grammer/date_window.pest"]
+#[grammar = "parser/grammar/quex.pest"]
+#[grammar = "parser/grammar/date_window.pest"]
 pub struct DateRangeParser;
 
 #[derive(Clone, Debug)]
@@ -83,11 +83,11 @@ fn rule_to_jdn(rule: pest::iterators::Pairs<Rule>) -> Result<i32, DateWindowErro
     for r in rule {
         match r.as_rule() {
             Rule::year => year = Some(r.as_str().parse().expect("unable to parse year")),
-            Rule::gregorian_month => month = Some(calender::month_from_quex(r.as_str())),
+            Rule::gregorian_month => month = Some(gre::month_from_quex(r.as_str())),
             Rule::month => {
                 month = Some(
                     // This unwrap might be susceptible to panic, if an integer
-                    // overflow occuers at that point you should ask your self
+                    // overflow occurs at that point you should ask your self
                     // what are you doing with all these months
                     time::Month::try_from(r.as_str().parse::<u8>().unwrap())
                         .map_err(error::invalid_date)?,

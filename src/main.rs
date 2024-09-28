@@ -36,12 +36,12 @@ fn main() {
     // Filtering options
     let (schedules, parse_errors) = quex::get_schedules(quex_path);
 
-    let date_winodw_filter = date_window.map(FilterOption::date_window);
+    let date_window_filter = date_window.map(FilterOption::date_window);
     let range_filter = Some(FilterOption::new_ranged(future, past));
     let command_filter = filter::command_to_filter(command.as_ref()).or(range_filter);
     let sub_str_filter = filter_str.map(FilterOption::new_sub_str);
 
-    let pipeline = vec![command_filter, sub_str_filter, date_winodw_filter];
+    let pipeline = vec![command_filter, sub_str_filter, date_window_filter];
 
     let schedules = filter::filter_pipeline(schedules, pipeline);
 

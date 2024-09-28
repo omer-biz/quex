@@ -1,120 +1,101 @@
-use std::fmt;
 use std::fmt::Debug;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use serde_derive::Serialize;
 
-use crate::parser::Rule;
+use crate::calender::LineError;
 
-pub type Result<T> = std::result::Result<T, Error>;
-
-#[derive(thiserror::Error, Debug, Serialize)]
+#[derive(Serialize, Debug)]
 pub struct Error {
-    kind: ValueError,
-    location: (usize, usize),
-    line: String,
-    path: Option<PathBuf>,
+    path: PathBuf,
+    errors: Vec<ValueError>,
 }
 
 impl Error {
-    pub fn with_path(mut self, path: &Path) -> Self {
-        self.path = Some(path.to_path_buf());
-        self
-    }
-
-    pub fn add_line(mut self, line: usize) -> Self {
-        self.location.0 += line;
-        self
-    }
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum ValueError {
-    #[cfg(feature = "eth")]
-    #[error(transparent)]
-    Zemen(#[from] zemen::error::Error),
-
-    #[cfg(not(feature = "eth"))]
-    #[error("feature `eth` is not enabled")]
-    EthNotEnabled,
-
-    #[error(transparent)]
-    Date(#[from] time::error::ComponentRange),
-
-    #[error("can not parse input")]
-    Parse(String),
-}
-
-impl serde::Serialize for ValueError {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        serializer.serialize_str(self.to_string().as_str())
-    }
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let msg = match &self.kind {
-            #[cfg(feature = "eth")]
-            ValueError::Zemen(_) => "invalid ethiopian date",
-
-            #[cfg(not(feature = "eth"))]
-            ValueError::EthNotEnabled => "feature `eth` is not enabled",
-
-            ValueError::Date(_) => "invalid gregorian date",
-            ValueError::Parse(msg) => msg.as_str(),
-        };
-
-        let path = self
-            .path
-            .as_ref()
-            .map(|p| p.to_string_lossy())
-            .unwrap_or_default();
-
-        let spacing = " ".repeat(self.location.0.to_string().len());
-
-        write!(
-            f,
-            "error: {}\n  --> {}:{}:{}\n{spacing}  |\n {} | {} \n{spacing}  |\n  = {}\n\n",
-            self.kind,
+    pub fn new(path: PathBuf) -> Self {
+        Self {
             path,
-            self.location.0,
-            self.location.1,
-            self.location.0,
-            self.line.trim(),
-            msg
-        )
+            errors: vec![],
+        }
+    }
+
+    pub fn push(&mut self, error: ValueError) {
+        self.errors.push(error);
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.errors.is_empty()
+    }
+
+    pub fn format(self) -> String {
+        let cap = self.errors.len();
+        self.errors
+            .into_iter()
+            .fold(String::with_capacity(cap * 100), |acc, err| {
+                format!(
+                    "{acc}error: -> {}{}",
+                    self.path.to_string_lossy(),
+                    err.format()
+                )
+            })
     }
 }
 
-pub fn qerror(e: pest::error::Error<Rule>) -> Error {
-    let line = e.line().to_string();
-
-    let location = match &e.line_col {
-        pest::error::LineColLocation::Pos(ref loc) => loc,
-        pest::error::LineColLocation::Span(_, ref loc) => loc,
-    };
-
-    Error {
-        location: (location.0, location.1),
-        kind: ValueError::Parse(e.variant.message().to_string()),
-        line,
-        path: None,
-    }
-}
-
-pub fn invalid_format<E: Into<ValueError>>(
-    location: (usize, usize),
+#[derive(Serialize, Debug)]
+pub struct ValueError {
+    line_error: LineError,
+    line_number: usize,
     line: String,
-) -> impl FnOnce(E) -> Error {
-    move |e: E| Error {
-        kind: e.into(),
-        location,
-        line,
-        path: None,
+}
+
+impl ValueError {
+    pub fn new(line_error: LineError, line_number: usize, line: String) -> Self {
+        Self {
+            line_error,
+            line_number,
+            line,
+        }
     }
+
+    pub fn format(self) -> String {
+        match self.line_error {
+            LineError::CantParseInput => cant_parse_input(self.line_number, self.line),
+            LineError::InvalidValue(m) => invalid_value(m, self.line_number, self.line),
+            LineError::ParsingError { error, .. } => format!("{error}\n\n"),
+        }
+    }
+}
+
+fn invalid_value(message: String, line_number: usize, line: String) -> String {
+    let line_number = line_number.to_string();
+    let spacing = " ".repeat(line_number.len());
+
+    format!(
+        ":{ls:w$}\n{s} |\n\
+         {ls:w$} | {line}\n\
+         {s} |\n\
+         {s} = note: {message}
+\n\n",
+        s = spacing,
+        ls = line_number,
+        w = spacing.len()
+    )
+}
+
+fn cant_parse_input(line_number: usize, line: String) -> String {
+    let line_number = line_number.to_string();
+    let spacing = " ".repeat(line_number.len());
+
+    format!(
+        ":{ls:w$}\n{s} |\n\
+         {ls:w$} | {line}\n\
+         {s} |\n\
+         {s} = note: can't parse input.
+\n\n",
+        s = spacing,
+        ls = line_number,
+        w = spacing.len()
+    )
 }
 
 // The name `io` is not a good idea, it being used in the standard library.

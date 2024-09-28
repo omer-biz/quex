@@ -6,8 +6,8 @@ use std::{
 };
 
 use crate::{
-    error::{io, Error},
-    parser::Schedule,
+    error::{io, Error, ValueError},
+    parser::{self, Schedule},
 };
 
 pub type Schedules = Vec<Schedule>;
@@ -46,15 +46,20 @@ pub fn walk_dir(path: PathBuf) -> Result<(Schedules, QErrors), io::FileError> {
                 Err(e) => return Err(io::FileError::new(path, e)),
             };
 
-            let mut raw_quex = String::new();
             let reader = BufReader::new(file);
             let mut line_iter = reader.lines().enumerate();
             let mut schedules: Schedules = vec![];
-            let mut errors = vec![];
+            let mut errors = Error::new(path.clone());
 
             loop {
-                let Some((line_num, line)) = line_iter.next() else {
-                    break Ok((schedules, errors));
+                let Some((_, line)) = line_iter.next() else {
+                    let rec_is_hard = if errors.is_empty() {
+                        Vec::with_capacity(0)
+                    } else {
+                        vec![errors]
+                    };
+
+                    break Ok((schedules, rec_is_hard));
                 };
 
                 let line = match line {
@@ -62,35 +67,23 @@ pub fn walk_dir(path: PathBuf) -> Result<(Schedules, QErrors), io::FileError> {
                     Err(e) => return Err(io::FileError::new(path, e)),
                 }; // file read error ? maybe generic
 
-                if line == "```quex" {
-                    for (_, line) in line_iter.by_ref() {
-                        let mut line = match line {
+                if line.trim().contains("```quex") {
+                    for (line_number, line) in line_iter.by_ref() {
+                        let line = match line {
                             Ok(line) => line,
+                            // TODO: Handle EOF
                             Err(e) => return Err(io::FileError::new(path, e)),
-                        }; // file read error ? maybe generic
+                        };
 
-                        // TODO: what if there was EOF before the end of the `quex` block?
-                        if line == "```" {
+                        if line.trim().contains("```") {
                             break;
                         }
-                        line.push('\n');
 
-                        // TODO: creates a redundant of the file contents one for `raw_quex` and one
-                        // for `line` it's self, since the lines from "```quex" to "```" are
-                        // consecutive, one allocation of String would have been enough. Find a way to
-                        // do that. maybe with unsafe
-                        raw_quex.push_str(&line);
+                        match parser::parse_line(line.as_str()) {
+                            Ok(event) => schedules.push(event),
+                            Err(e) => errors.push(ValueError::new(e, line_number + 1, line)),
+                        };
                     }
-                }
-
-                if !raw_quex.is_empty() {
-                    let schedule = super::parse_quex(&raw_quex);
-                    match schedule {
-                        Ok(schedule) => schedules.extend(schedule),
-                        Err(e) => errors.push(e.with_path(&path).add_line(line_num + 1)),
-                    }
-
-                    raw_quex.clear();
                 }
             }
         } else if file_extension == "quex" {
@@ -99,23 +92,33 @@ pub fn walk_dir(path: PathBuf) -> Result<(Schedules, QErrors), io::FileError> {
                 Err(e) => return Err(io::FileError::new(path, e)),
             };
 
-            // TODO: `read_to_string` is not efficient with big files
-            // use buffered reading.
-            let raw_quex = match std::io::read_to_string(file) {
-                Ok(file) => file,
-                Err(e) => return Err(io::FileError::new(path, e)),
+            let reader = BufReader::new(file);
+            let mut schedules = vec![];
+            let mut errors = Error::new(path.clone());
+
+            for (line_number, line) in reader.lines().enumerate() {
+                let line = match line {
+                    Ok(line) => line,
+                    Err(e) => return Err(io::FileError::new(path, e)),
+                };
+
+                if line.is_empty() {
+                    continue;
+                }
+
+                match parser::parse_line(line.as_str()) {
+                    Ok(event) => schedules.push(event),
+                    Err(e) => errors.push(ValueError::new(e, line_number + 1, line)),
+                }
+            }
+
+            let rec_is_hard = if errors.is_empty() {
+                Vec::with_capacity(0)
+            } else {
+                vec![errors]
             };
 
-            // TODO: design issue from not continuing when parse error is found
-            // this will change when we start to continue parsing even if we
-            // encounter parse errors
-            //
-            // This may also hint to modulirizing calenders
-            // see calender_modulrizing.md
-            match super::parse_quex(&raw_quex) {
-                Ok(s) => Ok((s, vec![])),
-                Err(e) => Ok((vec![], vec![e.with_path(&path)])),
-            }
+            Ok((schedules, rec_is_hard))
         } else {
             return Ok((vec![], vec![]));
         }

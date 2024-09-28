@@ -31,13 +31,11 @@ pub fn view_schedules(schedules: Schedules, format: &Format) {
                 .map(|t| format!(", {t}"))
                 .unwrap_or("".to_string());
 
-            if let Some(diff) = sch.diff {
-                match diff {
-                    0 => println!("Today{}, {}", time, sch.description),
-                    1 => println!("Tomorrow{}, {}", time, sch.description),
-                    -1 => println!("Yesterday{}, {}", time, sch.description),
-                    _ => println!("{}", sch),
-                }
+            match sch.diff {
+                0 => println!("Today{}, {}", time, sch.description),
+                1 => println!("Tomorrow{}, {}", time, sch.description),
+                -1 => println!("Yesterday{}, {}", time, sch.description),
+                _ => println!("{}", sch),
             }
         }),
     }
@@ -49,7 +47,9 @@ pub fn view_parse_errors(errors: QErrors, format: &Format) {
             let json = serde_json::to_string(&errors).unwrap();
             println!("{}", json);
         }
-        Format::Plain => errors.iter().for_each(|err| print!("{}", err)),
+        Format::Plain => errors
+            .into_iter()
+            .for_each(|err| print!("{}", err.format())),
     }
 }
 

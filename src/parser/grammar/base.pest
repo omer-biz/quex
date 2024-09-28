@@ -1,0 +1,15 @@
+WHITESPACE = _{ " " }
+
+message = @{ (!NEWLINE ~ ANY)+ }
+
+day          = ${ ASCII_DIGIT+ }
+year         =  { ASCII_DIGIT+ }
+n_sym        = _{ "*" }
+named_yearly =  { year ~ n_sym }
+yearly       =  { "*" }
+
+clock = { ASCII_DIGIT{1, 2} ~ ":" ~ ASCII_DIGIT{1, 2} }
+am_pm = { clock ~ (^"am" | ^"pm") }
+time  = { am_pm | clock }
+
+time_range = { time ~ "-" ~ time }

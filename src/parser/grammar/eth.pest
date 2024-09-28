@@ -1,0 +1,26 @@
+ethiopian_month = {
+    "mes"  | "መስከ"
+  | "tik"  | "ጥቅም"
+  | "hed"  | "ህዳር"
+  | "tah"  | "ታኅሣ"
+  | "tir"  | "ጥር"
+  | "yek"  | "የካቲ"
+  | "meg"  | "መጋቢ"
+  | "miy"  | "ሚያዝ"
+  | "gin"  | "ግንቦ"
+  | "sen"  | "ሴኒ"
+  | "ham"  | "ሐምሌ"
+  | "neh"  | "ነሐሴ"
+  | "pua"  | "ጳጉሜ"
+}
+
+// Since numbers are general and might trip the parser
+// and the names of the months are a bit specific they won't
+// trip the parser until it's appropriate
+ethiopian_date = { ethiopian_month  ~  day ~ (yearly | named_yearly | year) }
+monthly_sym       = _{ "q" ~ "=" }
+recurring_monthly = { monthly_sym ~ day }
+
+schedule = {
+    (recurring_monthly | ethiopian_date) ~ (time_range | time)? ~ "," ~ message ~ NEWLINE*
+}

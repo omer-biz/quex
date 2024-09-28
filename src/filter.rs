@@ -4,7 +4,7 @@ pub enum FilterOption {
     Ranged { future: i32, past: i32 },
     All,
     SubStr(String),
-    DateWinodw(DateWindow),
+    DateWindow(DateWindow),
 }
 
 impl FilterOption {
@@ -16,44 +16,31 @@ impl FilterOption {
         Self::SubStr(sub_str)
     }
     pub fn date_window(dw: DateWindow) -> Self {
-        Self::DateWinodw(dw)
+        Self::DateWindow(dw)
     }
 }
 
 fn filter_schedules(mut schedules: Schedules, filter_options: Option<FilterOption>) -> Schedules {
     if let Some(filter_options) = filter_options {
-        let jdn_today = time::OffsetDateTime::now_utc().date().to_julian_day();
-        schedules.sort_by_key(|sch| sch.date.julian_day());
+        schedules.sort_by_key(|sch| sch.julian_day_number);
 
         match filter_options {
             FilterOption::Ranged { future, past } => schedules
                 .into_iter()
-                .filter_map(|mut sch| {
-                    let diff = sch.date.julian_day() - jdn_today;
-                    sch.diff = Some(diff);
-
-                    match diff < future && diff > -past {
-                        true => Some(sch),
-                        false => None,
-                    }
+                .filter_map(|sch| match sch.diff < future && sch.diff > -past {
+                    true => Some(sch),
+                    false => None,
                 })
                 .collect(),
-            FilterOption::All => schedules
-                .into_iter()
-                .map(|mut sch| {
-                    let diff = sch.date.julian_day() - jdn_today;
-                    sch.diff = Some(diff);
-                    sch
-                })
-                .collect(),
+            FilterOption::All => schedules,
             FilterOption::SubStr(sub_str) => schedules
                 .into_iter()
                 .filter(|sch| sch.description.contains(sub_str.as_str()))
                 .collect(),
 
-            FilterOption::DateWinodw(DateWindow { begin, end }) => schedules
+            FilterOption::DateWindow(DateWindow { begin, end }) => schedules
                 .into_iter()
-                .filter(|sch| sch.date.julian_day() >= begin && sch.date.julian_day() <= end)
+                .filter(|sch| sch.julian_day_number >= begin && sch.julian_day_number <= end)
                 .collect(),
         }
     } else {
