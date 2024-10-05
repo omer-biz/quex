@@ -1,5 +1,4 @@
 use serde_derive::Serialize;
-use std::fmt;
 
 use crate::calender::{DateInfo, Event};
 use crate::parser::time_span;
@@ -27,17 +26,5 @@ impl<T: DateInfo> From<Event<T>> for Schedule {
             diff: date - today.to_julian_day(),
             date: event.date.pretty_print(),
         }
-    }
-}
-
-impl fmt::Display for Schedule {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let time = self
-            .time
-            .as_ref()
-            .map(|t| format!("{t}, "))
-            .unwrap_or("".to_string());
-
-        write!(f, "{}, {}{}", self.date, time, self.description)
     }
 }

@@ -12,7 +12,6 @@ fn main() {
         command,
         future,
         past,
-        errors,
         format,
         filter: filter_str,
         date_window,
@@ -22,7 +21,6 @@ fn main() {
 
     let quex_path = quex.unwrap_or(app_config.calendar);
     let editor = editor.unwrap_or(std::env::var("EDITOR").unwrap_or(app_config.editor));
-    let errors = errors.unwrap_or(app_config.print_errors.unwrap_or(false));
     let format = format.unwrap_or(app_config.format.unwrap_or(quex::Format::Plain));
 
     let future = future.unwrap_or(app_config.future.unwrap_or(14));
@@ -47,7 +45,5 @@ fn main() {
 
     // print the schedules
     quex::view_schedules(schedules, &format);
-    if errors {
-        quex::view_parse_errors(parse_errors, &format);
-    }
+    quex::view_parse_errors(parse_errors, &format);
 }

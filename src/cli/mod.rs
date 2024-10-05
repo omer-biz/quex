@@ -34,10 +34,6 @@ pub struct Cli {
     #[clap(short, long)]
     pub past: Option<i32>,
 
-    /// Show parsing errors
-    #[clap(long)]
-    pub errors: Option<bool>,
-
     /// Specify the format to use for printing the schedules [default: plain]
     #[clap(long, value_enum)]
     pub format: Option<Format>,
@@ -91,7 +87,6 @@ pub struct Config {
     pub editor: String,
     pub future: Option<i32>,
     pub past: Option<i32>,
-    pub print_errors: Option<bool>,
     pub format: Option<Format>,
 }
 
@@ -108,7 +103,6 @@ impl Default for Config {
             editor: String::from("nvim"),
             future: None,
             past: None,
-            print_errors: None,
             format: None,
         }
     }

@@ -32,10 +32,10 @@ pub fn view_schedules(schedules: Schedules, format: &Format) {
                 .unwrap_or("".to_string());
 
             match sch.diff {
-                0 => println!("Today{}, {}", time, sch.description),
-                1 => println!("Tomorrow{}, {}", time, sch.description),
-                -1 => println!("Yesterday{}, {}", time, sch.description),
-                _ => println!("{}", sch),
+                0 => println!("Today{}; {}", time, sch.description),
+                1 => println!("Tomorrow{}; {}", time, sch.description),
+                -1 => println!("Yesterday{}; {}", time, sch.description),
+                _ => println!("{}{}; {}", sch.date, time, sch.description),
             }
         }),
     }
@@ -45,11 +45,11 @@ pub fn view_parse_errors(errors: QErrors, format: &Format) {
     match format {
         Format::Json => {
             let json = serde_json::to_string(&errors).unwrap();
-            println!("{}", json);
+            eprintln!("{}", json);
         }
         Format::Plain => errors
             .into_iter()
-            .for_each(|err| print!("{}", err.format())),
+            .for_each(|err| eprint!("{}", err.format())),
     }
 }
 
