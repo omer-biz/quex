@@ -25,17 +25,12 @@ pub fn view_schedules(schedules: Schedules, format: &Format) {
             println!("{}", json);
         }
         Format::Plain => schedules.iter().for_each(|sch| {
-            let time = sch
-                .time
-                .as_ref()
-                .map(|t| format!(", {t}"))
-                .unwrap_or("".to_string());
 
             match sch.diff {
-                0 => println!("Today{}; {}", time, sch.description),
-                1 => println!("Tomorrow{}; {}", time, sch.description),
-                -1 => println!("Yesterday{}; {}", time, sch.description),
-                _ => println!("{}{}; {}", sch.date, time, sch.description),
+                0 => println!("Today; {}", sch.description),
+                1 => println!("Tomorrow; {}", sch.description),
+                -1 => println!("Yesterday; {}", sch.description),
+                _ => println!("{}; {}", sch.date, sch.description),
             }
         }),
     }

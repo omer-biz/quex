@@ -2,9 +2,6 @@ pub mod date_window;
 pub mod schedule;
 pub mod walker;
 
-mod time_span;
-mod utils;
-
 #[cfg(feature = "eth")]
 use crate::calender::eth::parse_eth_quex;
 

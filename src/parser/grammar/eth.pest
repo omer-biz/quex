@@ -22,5 +22,5 @@ monthly_sym       = _{ "q" ~ "=" }
 recurring_monthly = { monthly_sym ~ day }
 
 schedule = {
-    (recurring_monthly | ethiopian_date) ~ (time_range | time)? ~ "," ~ message ~ NEWLINE*
+    (recurring_monthly | ethiopian_date) ~ "," ~ message ~ NEWLINE*
 }
