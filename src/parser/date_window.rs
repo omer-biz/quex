@@ -1,3 +1,9 @@
+// When passing `--date-window` here are the possible values.
+// - "jan:1-feb:1" filters the dates from jan 1 to feb 1 of the current year.
+// - "jan:1" filters from january 1 to the current date.
+// - "2002:jan:1" filters from january 1 2002 to the current date
+// - "2002:jan:1-2002:feb:1" filters from january 1 2002 to feburary 1 2002.
+
 use core::fmt;
 use std::str::FromStr;
 
@@ -7,7 +13,8 @@ use pest_derive::Parser;
 use crate::calender::gre;
 
 #[derive(Parser)]
-#[grammar = "parser/grammar/quex.pest"]
+#[grammar = "parser/grammar/base.pest"]
+#[grammar = "parser/grammar/gre.pest"]
 #[grammar = "parser/grammar/date_window.pest"]
 pub struct DateRangeParser;
 
