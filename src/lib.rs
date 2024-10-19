@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     path::{Path, PathBuf},
     process::Command,
 };
@@ -14,9 +15,10 @@ mod parser;
 
 pub mod calender;
 
-pub fn get_schedules(path: PathBuf) -> (Schedules, QErrors) {
-    parser::walker::walk_dir(path).unwrap()
+pub fn get_schedules(path: PathBuf, file_format: HashMap<String, String>) -> (Schedules, QErrors) {
+    parser::walker::walk_dir(path, &file_format).unwrap()
 }
+
 
 pub fn view_schedules(schedules: Schedules, format: &Format) {
     match format {
@@ -24,14 +26,11 @@ pub fn view_schedules(schedules: Schedules, format: &Format) {
             let json = serde_json::to_string(&schedules).unwrap();
             println!("{}", json);
         }
-        Format::Plain => schedules.iter().for_each(|sch| {
-
-            match sch.diff {
-                0 => println!("Today; {}", sch.description),
-                1 => println!("Tomorrow; {}", sch.description),
-                -1 => println!("Yesterday; {}", sch.description),
-                _ => println!("{}; {}", sch.date, sch.description),
-            }
+        Format::Plain => schedules.iter().for_each(|sch| match sch.diff {
+            0 => println!("Today; {}", sch.description),
+            1 => println!("Tomorrow; {}", sch.description),
+            -1 => println!("Yesterday; {}", sch.description),
+            _ => println!("{}; {}", sch.date, sch.description),
         }),
     }
 }

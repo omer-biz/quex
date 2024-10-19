@@ -1,3 +1,5 @@
+use std::{collections::HashMap, error::Error};
+
 use clap::Parser;
 use quex::{
     cli::{self, Cli, Command},
@@ -15,7 +17,34 @@ fn main() {
         format,
         filter: filter_str,
         date_window,
+        file_format,
+        block,
     } = Cli::parse();
+
+    if file_format.len() != block.len() {
+        eprintln!("Error: The number of file formats and blocks must match.");
+        return;
+    }
+
+    let file_format: Result<HashMap<String, String>, Box<dyn Error>> = file_format
+        .into_iter()
+        .zip(block.into_iter())
+        .map(|(ff, bb)| {
+            let bparts: Vec<&str> = bb.split(',').collect();
+
+            if bparts.len() != 2 {
+                return Err(format!(
+                    "Block '{}' must contain a `start` and `end` separated by a comma.",
+                    bb
+                )
+                .into());
+            }
+
+            Ok((ff, bb))
+        })
+        .collect();
+
+    let file_format = file_format.unwrap();
 
     let app_config = cli::load_create_config(config).expect("Error loading config file");
 
@@ -32,7 +61,7 @@ fn main() {
     }
 
     // Filtering options
-    let (schedules, parse_errors) = quex::get_schedules(quex_path);
+    let (schedules, parse_errors) = quex::get_schedules(quex_path, file_format);
 
     let date_window_filter = date_window.map(FilterOption::date_window);
     let range_filter = Some(FilterOption::new_ranged(future, past));

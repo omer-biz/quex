@@ -45,6 +45,15 @@ pub struct Cli {
     /// Filter by window of time
     #[clap(long)]
     pub date_window: Option<DateWindow>,
+
+    /// File format (e.g., md, org)
+    // #[clap(long, value_delimiter = ',', default_value = "md,quex")]
+    #[clap(long, default_value = "md")]
+    pub file_format: Vec<String>,
+
+    /// Block start and end (e.g., ```quex,```)
+    #[clap(long, default_value = "```quex,```")]
+    pub block: Vec<String>,
 }
 
 #[derive(Debug, PartialEq, ValueEnum, Clone, Serialize, Deserialize)]

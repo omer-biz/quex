@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     ffi::OsStr,
     fs::File,
     io::{BufRead, BufReader},
@@ -13,7 +14,10 @@ use crate::{
 pub type Schedules = Vec<Schedule>;
 pub type QErrors = Vec<Error>;
 
-pub fn walk_dir(path: PathBuf) -> Result<(Schedules, QErrors), io::FileError> {
+pub fn walk_dir(
+    path: PathBuf,
+    file_formats: &HashMap<String, String>,
+) -> Result<(Schedules, QErrors), io::FileError> {
     if path.is_dir() {
         let mut schedules: Schedules = vec![];
         let mut errors = vec![];
@@ -31,7 +35,7 @@ pub fn walk_dir(path: PathBuf) -> Result<(Schedules, QErrors), io::FileError> {
                 Err(e) => return Err(io::FileError::new(path, e)),
             };
 
-            let (schs, errs) = walk_dir(ent)?;
+            let (schs, errs) = walk_dir(ent, file_formats)?;
 
             schedules.extend(schs);
             errors.extend(errs);
@@ -40,11 +44,17 @@ pub fn walk_dir(path: PathBuf) -> Result<(Schedules, QErrors), io::FileError> {
     } else {
         let file_extension = path.extension().and_then(OsStr::to_str).unwrap_or("");
 
-        if file_extension == "md" {
-            let file = match File::open(&path) {
-                Ok(file) => file,
-                Err(e) => return Err(io::FileError::new(path, e)),
-            };
+        if let Some(block) = file_formats.get(file_extension) {
+            let mut bparts = block.split(',');
+            let begin = bparts.next().unwrap().trim();
+            let end = bparts.next().unwrap().trim();
+
+
+        let file = match File::open(&path) {
+            Ok(file) => file,
+            Err(e) => return Err(io::FileError::new(path, e)),
+        };
+
 
             let reader = BufReader::new(file);
             let mut line_iter = reader.lines().enumerate();
@@ -53,6 +63,7 @@ pub fn walk_dir(path: PathBuf) -> Result<(Schedules, QErrors), io::FileError> {
 
             loop {
                 let Some((_, line)) = line_iter.next() else {
+                    // NOTE: recursion is hard
                     let rec_is_hard = if errors.is_empty() {
                         Vec::with_capacity(0)
                     } else {
@@ -67,7 +78,7 @@ pub fn walk_dir(path: PathBuf) -> Result<(Schedules, QErrors), io::FileError> {
                     Err(e) => return Err(io::FileError::new(path, e)),
                 }; // file read error ? maybe generic
 
-                if line.trim().contains("```quex") {
+                if line.trim().contains(begin) {
                     for (line_number, line) in line_iter.by_ref() {
                         let line = match line {
                             Ok(line) => line,
@@ -75,11 +86,11 @@ pub fn walk_dir(path: PathBuf) -> Result<(Schedules, QErrors), io::FileError> {
                             Err(e) => return Err(io::FileError::new(path, e)),
                         };
 
-                        if line.trim().contains("```") {
+                        if line.trim().contains(end) {
                             break;
                         }
 
-                        match parser::parse_line(line.as_str()) {
+                        match parser::parse_line(line.as_str().trim()) {
                             Ok(event) => schedules.push(event),
                             Err(e) => errors.push(ValueError::new(e, line_number + 1, line)),
                         };
@@ -120,6 +131,7 @@ pub fn walk_dir(path: PathBuf) -> Result<(Schedules, QErrors), io::FileError> {
 
             Ok((schedules, rec_is_hard))
         } else {
+            // NOTE: Should I return an Option here ?
             return Ok((vec![], vec![]));
         }
     }
